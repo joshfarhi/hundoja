@@ -27,10 +27,18 @@ export default function SettingsPage() {
 
   const fetchSettings = async () => {
     try {
+      console.log('Fetching settings...');
       const response = await fetch('/api/admin/settings');
-      if (!response.ok) throw new Error('Failed to fetch settings');
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(`Failed to fetch settings: ${response.status}`);
+      }
       
       const data = await response.json();
+      console.log('Settings data:', data);
       setSettings(data);
       
       // Initialize form data
@@ -41,7 +49,22 @@ export default function SettingsPage() {
       setFormData(initialData);
     } catch (error) {
       console.error('Error fetching settings:', error);
-      setStatus({ type: 'error', message: 'Failed to load settings' });
+      setStatus({ type: 'error', message: `Failed to load settings: ${error instanceof Error ? error.message : 'Unknown error'}` });
+      
+      // Fallback: create default settings structure if API fails
+      const defaultSettings: EmailSetting[] = [
+        { id: '1', setting_key: 'gmail_user', setting_value: '', encrypted: false, description: 'Gmail email address for sending newsletters and notifications' },
+        { id: '2', setting_key: 'gmail_app_password', setting_value: '', encrypted: true, description: 'Gmail app password for SMTP authentication' },
+        { id: '3', setting_key: 'newsletter_from_name', setting_value: 'Hundoja', encrypted: false, description: 'Display name for newsletter emails' },
+        { id: '4', setting_key: 'admin_notification_enabled', setting_value: 'true', encrypted: false, description: 'Enable admin notifications for new subscribers' }
+      ];
+      setSettings(defaultSettings);
+      
+      const initialData: Record<string, string> = {};
+      defaultSettings.forEach((setting) => {
+        initialData[setting.setting_key] = setting.setting_value || '';
+      });
+      setFormData(initialData);
     } finally {
       setLoading(false);
     }
@@ -107,7 +130,7 @@ export default function SettingsPage() {
               <h3 className="text-blue-400 font-semibold">Gmail Configuration</h3>
               <p className="text-gray-300 text-sm mt-1">
                 Configure your Gmail credentials to enable newsletter subscriptions and admin notifications. 
-                You'll need to generate an App Password from your Google Account settings.
+                You&apos;ll need to generate an App Password from your Google Account settings.
               </p>
             </div>
           </div>
@@ -207,8 +230,8 @@ export default function SettingsPage() {
           <ol className="text-gray-300 text-sm space-y-2 list-decimal list-inside">
             <li>Go to your Google Account settings</li>
             <li>Navigate to Security → 2-Step Verification</li>
-            <li>At the bottom, select "App passwords"</li>
-            <li>Select "Mail" and choose your device</li>
+            <li>At the bottom, select &quot;App passwords&quot;</li>
+            <li>Select &quot;Mail&quot; and choose your device</li>
             <li>Copy the 16-character app password and paste it above</li>
           </ol>
           <p className="text-yellow-400 text-xs mt-4">
