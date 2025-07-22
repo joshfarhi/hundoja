@@ -5,6 +5,7 @@ import { useAuth } from '@clerk/nextjs';
 import { redirect } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
+import { AdminProvider } from '@/contexts/AdminContext';
 import { supabase } from '@/lib/supabase';
 
 export default function AdminLayout({
@@ -54,16 +55,18 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="flex">
-        <AdminSidebar />
-        <div className="flex-1 ml-64">
-          <AdminHeader />
-          <main className="p-6">
-            {children}
-          </main>
+    <AdminProvider>
+      <div className="min-h-screen bg-black">
+        <div className="flex">
+          <AdminSidebar />
+          <div className="flex-1 ml-64">
+            <AdminHeader />
+            <main className="p-6">
+              {children}
+            </main>
+          </div>
         </div>
       </div>
-    </div>
+    </AdminProvider>
   );
 }

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useAdmin } from '@/contexts/AdminContext';
 import {
   Search,
   Download,
@@ -15,79 +16,9 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  X,
+  Sparkles,
 } from 'lucide-react';
-
-const orders = [
-  {
-    id: 'ORD-001',
-    customer: {
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      avatar: '/avatars/john.jpg'
-    },
-    products: [
-      { name: 'Shadow Oversized Hoodie', quantity: 1, price: 89.99 }
-    ],
-    total: 89.99,
-    status: 'completed',
-    paymentStatus: 'paid',
-    shippingAddress: '123 Main St, New York, NY 10001',
-    orderDate: '2024-01-15T10:30:00Z',
-    deliveryDate: '2024-01-18T14:00:00Z',
-  },
-  {
-    id: 'ORD-002',
-    customer: {
-      name: 'Jane Smith',
-      email: 'jane.smith@example.com',
-      avatar: '/avatars/jane.jpg'
-    },
-    products: [
-      { name: 'Urban Cargo Pants', quantity: 1, price: 129.99 },
-      { name: 'Minimal Logo Tee', quantity: 2, price: 45.99 }
-    ],
-    total: 221.97,
-    status: 'processing',
-    paymentStatus: 'paid',
-    shippingAddress: '456 Oak Ave, Los Angeles, CA 90001',
-    orderDate: '2024-01-15T15:45:00Z',
-    deliveryDate: null,
-  },
-  {
-    id: 'ORD-003',
-    customer: {
-      name: 'Mike Johnson',
-      email: 'mike.johnson@example.com',
-      avatar: '/avatars/mike.jpg'
-    },
-    products: [
-      { name: 'Statement Bomber Jacket', quantity: 1, price: 189.99 }
-    ],
-    total: 189.99,
-    status: 'shipped',
-    paymentStatus: 'paid',
-    shippingAddress: '789 Pine St, Chicago, IL 60601',
-    orderDate: '2024-01-14T09:15:00Z',
-    deliveryDate: '2024-01-17T16:30:00Z',
-  },
-  {
-    id: 'ORD-004',
-    customer: {
-      name: 'Sarah Wilson',
-      email: 'sarah.wilson@example.com',
-      avatar: '/avatars/sarah.jpg'
-    },
-    products: [
-      { name: 'Tech Joggers', quantity: 1, price: 79.99 }
-    ],
-    total: 79.99,
-    status: 'pending',
-    paymentStatus: 'pending',
-    shippingAddress: '321 Elm St, Miami, FL 33101',
-    orderDate: '2024-01-16T11:20:00Z',
-    deliveryDate: null,
-  },
-];
 
 const statusConfig = {
   pending: { label: 'Pending', icon: Clock, color: 'text-yellow-400 bg-yellow-500/20' },
@@ -98,10 +29,11 @@ const statusConfig = {
 };
 
 export default function OrdersPage() {
+  const { state, dispatch, removeDemoItems } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = state.orders.filter(order => {
     const matchesSearch = order.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
@@ -143,6 +75,39 @@ export default function OrdersPage() {
           <span>Export Orders</span>
         </motion.button>
       </motion.div>
+
+      {/* Demo Items Banner */}
+      {state.orders.some(o => o.isDemo) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "flex items-center justify-between p-4 rounded-lg",
+            "bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30"
+          )}
+        >
+          <div className="flex items-center space-x-3">
+            <Sparkles className="text-purple-400" size={20} />
+            <div>
+              <h3 className="text-white font-medium">Demo Orders Active</h3>
+              <p className="text-purple-300 text-sm">These are example orders to help you get started</p>
+            </div>
+          </div>
+          <motion.button
+            onClick={removeDemoItems}
+            className={cn(
+              "flex items-center space-x-2 px-4 py-2",
+              "bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg",
+              "hover:from-red-600 hover:to-pink-600 transition-all duration-200"
+            )}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <X size={16} />
+            <span>Remove All Demo Items</span>
+          </motion.button>
+        </motion.div>
+      )}
 
       {/* Filters and Search */}
       <motion.div
@@ -227,7 +192,17 @@ export default function OrdersPage() {
                     className="border-b border-white/5 hover:bg-white/5 transition-all"
                   >
                     <td className="p-4">
-                      <div className="font-medium text-white">{order.id}</div>
+                      <div className="flex items-center space-x-2">
+                        <div className="font-medium text-white">{order.id}</div>
+                        {order.isDemo && (
+                          <span className={cn(
+                            "px-2 py-1 text-xs font-medium rounded-full",
+                            "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                          )}>
+                            DEMO
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-neutral-400">
                         {formatDate(order.orderDate)}
                       </div>
@@ -293,11 +268,15 @@ export default function OrdersPage() {
                           <Edit className="text-neutral-400" size={16} />
                         </motion.button>
                         <motion.button
-                          className="p-2 hover:bg-red-500/20 rounded-lg transition-all"
+                          onClick={() => dispatch({ type: 'DELETE_ORDER', payload: order.id })}
+                          className={cn(
+                            "p-2 hover:bg-red-500/20 rounded-lg transition-all",
+                            order.isDemo && "hover:bg-purple-500/20"
+                          )}
                           whileHover={{ scale: 1.05 }}
-                          title="Cancel Order"
+                          title={order.isDemo ? "Remove Demo Order" : "Cancel Order"}
                         >
-                          <Trash2 className="text-red-400" size={16} />
+                          <Trash2 className={order.isDemo ? "text-purple-400" : "text-red-400"} size={16} />
                         </motion.button>
                       </div>
                     </td>

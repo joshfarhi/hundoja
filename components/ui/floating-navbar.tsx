@@ -6,8 +6,7 @@ import {
   useScroll,
   useMotionValueEvent,
 } from "motion/react";
-import { cn } from "/lib/utils";
-
+import { cn } from "@/lib/utils";
 
 export const FloatingNav = ({
   navItems,
@@ -16,7 +15,7 @@ export const FloatingNav = ({
   navItems: {
     name: string;
     link: string;
-    icon?: JSX.Element;
+    icon?: React.ReactElement;
   }[];
   className?: string;
 }) => {
@@ -60,7 +59,7 @@ export const FloatingNav = ({
           className
         )}
       >
-        {navItems.map((navItem: { name: string; link: string; icon?: JSX.Element }, idx: number) => (
+        {navItems.map((navItem: { name: string; link: string; icon?: React.ReactElement }, idx: number) => (
           <a
             key={`link=${idx}`}
             href={navItem.link}

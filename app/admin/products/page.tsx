@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { useAdmin } from '@/contexts/AdminContext';
 import {
   Plus,
   Search,
@@ -15,85 +16,9 @@ import {
   ChevronDown,
   AlertCircle,
   CheckCircle,
+  X,
+  Sparkles,
 } from 'lucide-react';
-
-const products = [
-  {
-    id: '1',
-    name: 'Shadow Oversized Hoodie',
-    price: 89.99,
-    cost: 45.00,
-    stock: 15,
-    category: 'Hoodies',
-    status: 'active',
-    featured: true,
-    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=500&h=600&fit=crop',
-    sku: 'SOH-001',
-    sold: 124,
-    createdAt: '2024-01-10',
-    updatedAt: '2024-01-15',
-  },
-  {
-    id: '2',
-    name: 'Urban Cargo Pants',
-    price: 129.99,
-    cost: 65.00,
-    stock: 8,
-    category: 'Pants',
-    status: 'active',
-    featured: true,
-    image: 'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=500&h=600&fit=crop',
-    sku: 'UCP-002',
-    sold: 89,
-    createdAt: '2024-01-08',
-    updatedAt: '2024-01-14',
-  },
-  {
-    id: '3',
-    name: 'Minimal Logo Tee',
-    price: 45.99,
-    cost: 18.00,
-    stock: 32,
-    category: 'T-Shirts',
-    status: 'active',
-    featured: true,
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=600&fit=crop',
-    sku: 'MLT-003',
-    sold: 256,
-    createdAt: '2024-01-05',
-    updatedAt: '2024-01-12',
-  },
-  {
-    id: '4',
-    name: 'Statement Bomber Jacket',
-    price: 189.99,
-    cost: 95.00,
-    stock: 3,
-    category: 'Jackets',
-    status: 'low_stock',
-    featured: true,
-    image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&h=600&fit=crop',
-    sku: 'SBJ-004',
-    sold: 45,
-    createdAt: '2024-01-03',
-    updatedAt: '2024-01-11',
-  },
-  {
-    id: '5',
-    name: 'Tech Joggers',
-    price: 79.99,
-    cost: 40.00,
-    stock: 0,
-    category: 'Pants',
-    status: 'out_of_stock',
-    featured: false,
-    image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-    sku: 'TJ-005',
-    sold: 167,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-10',
-  },
-];
 
 const statusConfig = {
   active: { label: 'Active', icon: CheckCircle, color: 'text-green-400 bg-green-500/20' },
@@ -104,11 +29,12 @@ const statusConfig = {
 };
 
 export default function ProductsPage() {
+  const { state, dispatch, removeDemoItems } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = state.products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.sku.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
@@ -146,13 +72,46 @@ export default function ProductsPage() {
         </motion.button>
       </motion.div>
 
+      {/* Demo Items Banner */}
+      {state.products.some(p => p.isDemo) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "flex items-center justify-between p-4 rounded-lg",
+            "bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30"
+          )}
+        >
+          <div className="flex items-center space-x-3">
+            <Sparkles className="text-purple-400" size={20} />
+            <div>
+              <h3 className="text-white font-medium">Demo Products Active</h3>
+              <p className="text-purple-300 text-sm">These are example products to help you get started</p>
+            </div>
+          </div>
+          <motion.button
+            onClick={removeDemoItems}
+            className={cn(
+              "flex items-center space-x-2 px-4 py-2",
+              "bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg",
+              "hover:from-red-600 hover:to-pink-600 transition-all duration-200"
+            )}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <X size={16} />
+            <span>Remove All Demo Items</span>
+          </motion.button>
+        </motion.div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { title: 'Total Products', value: products.length, icon: Package, color: 'from-blue-500 to-cyan-500' },
-          { title: 'Active', value: products.filter(p => p.status === 'active').length, icon: CheckCircle, color: 'from-green-500 to-emerald-500' },
-          { title: 'Low Stock', value: products.filter(p => p.status === 'low_stock').length, icon: AlertCircle, color: 'from-yellow-500 to-orange-500' },
-          { title: 'Out of Stock', value: products.filter(p => p.status === 'out_of_stock').length, icon: AlertCircle, color: 'from-red-500 to-pink-500' },
+          { title: 'Total Products', value: state.products.length, icon: Package, color: 'from-blue-500 to-cyan-500' },
+          { title: 'Active', value: state.products.filter(p => p.status === 'active').length, icon: CheckCircle, color: 'from-green-500 to-emerald-500' },
+          { title: 'Low Stock', value: state.products.filter(p => p.status === 'low_stock').length, icon: AlertCircle, color: 'from-yellow-500 to-orange-500' },
+          { title: 'Out of Stock', value: state.products.filter(p => p.status === 'out_of_stock').length, icon: AlertCircle, color: 'from-red-500 to-pink-500' },
         ].map((stat, index) => (
           <motion.div
             key={stat.title}
@@ -294,6 +253,14 @@ export default function ProductsPage() {
                             {product.featured && (
                               <Star className="text-yellow-400 fill-current" size={14} />
                             )}
+                            {product.isDemo && (
+                              <span className={cn(
+                                "px-2 py-1 text-xs font-medium rounded-full",
+                                "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                              )}>
+                                DEMO
+                              </span>
+                            )}
                           </div>
                           <div className="text-neutral-400 text-sm">{product.category}</div>
                         </div>
@@ -345,11 +312,15 @@ export default function ProductsPage() {
                           <Edit className="text-neutral-400" size={16} />
                         </motion.button>
                         <motion.button
-                          className="p-2 hover:bg-red-500/20 rounded-lg transition-all"
+                          onClick={() => dispatch({ type: 'DELETE_PRODUCT', payload: product.id })}
+                          className={cn(
+                            "p-2 hover:bg-red-500/20 rounded-lg transition-all",
+                            product.isDemo && "hover:bg-purple-500/20"
+                          )}
                           whileHover={{ scale: 1.05 }}
-                          title="Delete Product"
+                          title={product.isDemo ? "Remove Demo Product" : "Delete Product"}
                         >
-                          <Trash2 className="text-red-400" size={16} />
+                          <Trash2 className={product.isDemo ? "text-purple-400" : "text-red-400"} size={16} />
                         </motion.button>
                       </div>
                     </td>

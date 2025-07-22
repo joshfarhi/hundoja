@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import CartSidebar from '@/components/CartSidebar';
 import Footer from '@/components/Footer';
-import { products } from '@/data/products';
+import { products, Product } from '@/data/products';
 import { useCart } from '@/contexts/CartContext';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
@@ -17,7 +17,7 @@ interface ProductPageProps {
 
 export default function ProductPage({ params }: ProductPageProps) {
   const [id, setId] = useState<string>('');
-  const [product, setProduct] = useState<any>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const { dispatch } = useCart();
   
   const [selectedSize, setSelectedSize] = useState('');
@@ -29,7 +29,7 @@ export default function ProductPage({ params }: ProductPageProps) {
       const resolvedParams = await params;
       setId(resolvedParams.id);
       const foundProduct = products.find(p => p.id === resolvedParams.id);
-      setProduct(foundProduct);
+      setProduct(foundProduct || null);
     }
     getParams();
   }, [params]);

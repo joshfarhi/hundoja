@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useAdmin } from '@/contexts/AdminContext';
 import {
   DollarSign,
   ShoppingBag,
@@ -12,75 +13,55 @@ import {
   TrendingDown,
   Eye,
   MoreHorizontal,
+  Mail,
+  X,
+  Sparkles,
 } from 'lucide-react';
 
-const stats = [
-  {
-    title: 'Total Revenue',
-    value: '$12,426',
-    change: '+12.5%',
-    isPositive: true,
-    icon: DollarSign,
-  },
-  {
-    title: 'Orders',
-    value: '156',
-    change: '+8.2%',
-    isPositive: true,
-    icon: ShoppingBag,
-  },
-  {
-    title: 'Customers',
-    value: '1,234',
-    change: '+3.1%',
-    isPositive: true,
-    icon: Users,
-  },
-  {
-    title: 'Products',
-    value: '48',
-    change: '-2.4%',
-    isPositive: false,
-    icon: Package,
-  },
-];
-
-const recentOrders = [
-  {
-    id: '#ORD-001',
-    customer: 'John Doe',
-    product: 'Shadow Oversized Hoodie',
-    amount: '$89.99',
-    status: 'Completed',
-    date: '2024-01-15',
-  },
-  {
-    id: '#ORD-002',
-    customer: 'Jane Smith',
-    product: 'Urban Cargo Pants',
-    amount: '$129.99',
-    status: 'Processing',
-    date: '2024-01-15',
-  },
-  {
-    id: '#ORD-003',
-    customer: 'Mike Johnson',
-    product: 'Minimal Logo Tee',
-    amount: '$45.99',
-    status: 'Shipped',
-    date: '2024-01-14',
-  },
-  {
-    id: '#ORD-004',
-    customer: 'Sarah Wilson',
-    product: 'Statement Bomber Jacket',
-    amount: '$189.99',
-    status: 'Pending',
-    date: '2024-01-14',
-  },
-];
-
 export default function AdminDashboard() {
+  const { state, removeDemoItems } = useAdmin();
+  
+  // Calculate real-time stats
+  const totalRevenue = state.orders.reduce((sum, order) => sum + order.total, 0);
+  const totalCustomers = new Set(state.orders.map(order => order.customer.email)).size;
+  
+  const stats = [
+    {
+      title: 'Total Revenue',
+      value: `$${totalRevenue.toFixed(2)}`,
+      change: '+12.5%',
+      isPositive: true,
+      icon: DollarSign,
+    },
+    {
+      title: 'Orders',
+      value: state.orders.length.toString(),
+      change: '+8.2%',
+      isPositive: true,
+      icon: ShoppingBag,
+    },
+    {
+      title: 'Customers',
+      value: totalCustomers.toString(),
+      change: '+3.1%',
+      isPositive: true,
+      icon: Users,
+    },
+    {
+      title: 'Products',
+      value: state.products.length.toString(),
+      change: '+5.7%',
+      isPositive: true,
+      icon: Package,
+    },
+  ];
+
+  // Get recent orders (first 4)
+  const recentOrders = state.orders.slice(0, 4);
+  const hasAnyDemoItems = state.products.some(p => p.isDemo) || 
+                         state.orders.some(o => o.isDemo) || 
+                         state.contacts.some(c => c.isDemo);
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -105,6 +86,125 @@ export default function AdminDashboard() {
           Generate Report
         </motion.button>
       </motion.div>
+
+      {/* Demo Items Banner */}
+      {hasAnyDemoItems && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "flex items-center justify-between p-4 rounded-lg",
+            "bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30"
+          )}
+        >
+          <div className="flex items-center space-x-3">
+            <Sparkles className="text-purple-400" size={20} />
+            <div>
+              <h3 className="text-white font-medium">Demo Data Active</h3>
+              <p className="text-purple-300 text-sm">
+                You have {state.products.filter(p => p.isDemo).length} demo products, {' '}
+                {state.orders.filter(o => o.isDemo).length} demo orders, and {' '}
+                {state.contacts.filter(c => c.isDemo).length} demo contacts
+              </p>
+            </div>
+          </div>
+          <motion.button
+            onClick={removeDemoItems}
+            className={cn(
+              "flex items-center space-x-2 px-4 py-2",
+              "bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg",
+              "hover:from-red-600 hover:to-pink-600 transition-all duration-200"
+            )}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <X size={16} />
+            <span>Remove All Demo Items</span>
+          </motion.button>
+        </motion.div>
+      )}
+
+      {/* Quick Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "p-4 rounded-lg bg-gradient-to-r from-blue-500/20 to-cyan-500/20",
+            "border border-blue-500/30"
+          )}
+        >
+          <div className="flex items-center space-x-2">
+            <Package className="text-blue-400" size={16} />
+            <span className="text-blue-300 text-sm">Products</span>
+          </div>
+          <div className="text-white text-2xl font-bold">{state.products.length}</div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className={cn(
+            "p-4 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20",
+            "border border-green-500/30"
+          )}
+        >
+          <div className="flex items-center space-x-2">
+            <ShoppingBag className="text-green-400" size={16} />
+            <span className="text-green-300 text-sm">Orders</span>
+          </div>
+          <div className="text-white text-2xl font-bold">{state.orders.length}</div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className={cn(
+            "p-4 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20",
+            "border border-purple-500/30"
+          )}
+        >
+          <div className="flex items-center space-x-2">
+            <Mail className="text-purple-400" size={16} />
+            <span className="text-purple-300 text-sm">Contacts</span>
+          </div>
+          <div className="text-white text-2xl font-bold">{state.contacts.length}</div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className={cn(
+            "p-4 rounded-lg bg-gradient-to-r from-yellow-500/20 to-orange-500/20",
+            "border border-yellow-500/30"
+          )}
+        >
+          <div className="flex items-center space-x-2">
+            <Users className="text-yellow-400" size={16} />
+            <span className="text-yellow-300 text-sm">Customers</span>
+          </div>
+          <div className="text-white text-2xl font-bold">{totalCustomers}</div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className={cn(
+            "p-4 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20",
+            "border border-cyan-500/30"
+          )}
+        >
+          <div className="flex items-center space-x-2">
+            <DollarSign className="text-cyan-400" size={16} />
+            <span className="text-cyan-300 text-sm">Revenue</span>
+          </div>
+          <div className="text-white text-2xl font-bold">${totalRevenue.toFixed(0)}</div>
+        </motion.div>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -200,26 +300,47 @@ export default function AdminDashboard() {
                   transition={{ delay: 0.1 * index }}
                   className="border-b border-white/5 hover:bg-white/5 transition-all"
                 >
-                  <td className="p-4 text-white font-medium">{order.id}</td>
-                  <td className="p-4 text-neutral-300">{order.customer}</td>
-                  <td className="p-4 text-neutral-300">{order.product}</td>
-                  <td className="p-4 text-white font-semibold">{order.amount}</td>
+                  <td className="p-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-white font-medium">{order.id}</span>
+                      {order.isDemo && (
+                        <span className={cn(
+                          "px-2 py-1 text-xs font-medium rounded-full",
+                          "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                        )}>
+                          DEMO
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4 text-neutral-300">{order.customer.name}</td>
+                  <td className="p-4 text-neutral-300">
+                    {order.products.length > 1 
+                      ? `${order.products[0].name} +${order.products.length - 1} more`
+                      : order.products[0]?.name
+                    }
+                  </td>
+                  <td className="p-4 text-white font-semibold">${order.total.toFixed(2)}</td>
                   <td className="p-4">
                     <span className={cn(
-                      "px-3 py-1 rounded-full text-xs font-medium",
-                      order.status === 'Completed' && "bg-green-500/20 text-green-400",
-                      order.status === 'Processing' && "bg-yellow-500/20 text-yellow-400",
-                      order.status === 'Shipped' && "bg-blue-500/20 text-blue-400",
-                      order.status === 'Pending' && "bg-neutral-500/20 text-neutral-400"
+                      "px-3 py-1 rounded-full text-xs font-medium capitalize",
+                      order.status === 'completed' && "bg-green-500/20 text-green-400",
+                      order.status === 'processing' && "bg-yellow-500/20 text-yellow-400",
+                      order.status === 'shipped' && "bg-blue-500/20 text-blue-400",
+                      order.status === 'pending' && "bg-neutral-500/20 text-neutral-400",
+                      order.status === 'cancelled' && "bg-red-500/20 text-red-400"
                     )}>
                       {order.status}
                     </span>
                   </td>
-                  <td className="p-4 text-neutral-400">{order.date}</td>
+                  <td className="p-4 text-neutral-400">
+                    {new Date(order.orderDate).toLocaleDateString()}
+                  </td>
                   <td className="p-4">
                     <motion.button
                       className="p-2 hover:bg-white/10 rounded-lg transition-all"
                       whileHover={{ scale: 1.05 }}
+                      title="View Order"
                     >
                       <Eye className="text-neutral-400" size={16} />
                     </motion.button>

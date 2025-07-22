@@ -11,12 +11,17 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-
-const stripePromise = getStripe();
+import { useState, useEffect } from 'react';
+import type { Stripe } from '@stripe/stripe-js';
 
 export default function CheckoutPage() {
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const { state } = useCart();
   const { isSignedIn } = useAuth();
+
+  useEffect(() => {
+    setStripePromise(getStripe());
+  }, []);
 
   if (!isSignedIn) {
     return (
@@ -151,9 +156,15 @@ export default function CheckoutPage() {
                 Payment Details
               </h2>
               
-              <Elements stripe={stripePromise} options={options}>
-                <CheckoutForm />
-              </Elements>
+              {stripePromise ? (
+                <Elements stripe={stripePromise} options={options}>
+                  <CheckoutForm />
+                </Elements>
+              ) : (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-white">Loading payment form...</div>
+                </div>
+              )}
             </motion.div>
           </div>
         </div>

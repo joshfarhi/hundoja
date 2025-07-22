@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useAdmin } from '@/contexts/AdminContext';
 import {
   Mail,
   Search,
@@ -17,80 +18,10 @@ import {
   User,
   Phone,
   ChevronDown,
+  X,
+  Sparkles,
+  Trash2,
 } from 'lucide-react';
-
-const contacts = [
-  {
-    id: 'CT-001',
-    name: 'John Smith',
-    email: 'john.smith@example.com',
-    phone: '+1 (555) 123-4567',
-    subject: 'Question about sizing',
-    message: 'Hi, I\'m interested in the Shadow Oversized Hoodie but I\'m not sure about the sizing. Could you help me with the measurements for size Large?',
-    status: 'new',
-    priority: 'normal',
-    category: 'product_inquiry',
-    submittedAt: '2024-01-16T14:30:00Z',
-    respondedAt: null,
-    tags: ['sizing', 'hoodie'],
-  },
-  {
-    id: 'CT-002',
-    name: 'Sarah Johnson',
-    email: 'sarah.j@example.com',
-    phone: '+1 (555) 987-6543',
-    subject: 'Order delivery issue',
-    message: 'My order #ORD-123 was supposed to arrive yesterday but I haven\'t received it yet. Can you please check the status? The tracking number seems to be invalid.',
-    status: 'in_progress',
-    priority: 'high',
-    category: 'order_support',
-    submittedAt: '2024-01-15T09:15:00Z',
-    respondedAt: '2024-01-15T11:30:00Z',
-    tags: ['delivery', 'tracking', 'urgent'],
-  },
-  {
-    id: 'CT-003',
-    name: 'Mike Davis',
-    email: 'mike.davis@example.com',
-    phone: null,
-    subject: 'Wholesale inquiry',
-    message: 'Hello, I run a boutique store in downtown LA and I\'m interested in carrying your brand. Could we discuss wholesale pricing and minimum order quantities?',
-    status: 'resolved',
-    priority: 'high',
-    category: 'business',
-    submittedAt: '2024-01-14T16:45:00Z',
-    respondedAt: '2024-01-14T18:20:00Z',
-    tags: ['wholesale', 'business', 'partnership'],
-  },
-  {
-    id: 'CT-004',
-    name: 'Emily Chen',
-    email: 'emily.chen@example.com',
-    phone: '+1 (555) 456-7890',
-    subject: 'Return request',
-    message: 'I received the Urban Cargo Pants but they don\'t fit properly. I\'d like to return them and get a refund. The item is still in original packaging.',
-    status: 'new',
-    priority: 'normal',
-    category: 'returns',
-    submittedAt: '2024-01-16T11:20:00Z',
-    respondedAt: null,
-    tags: ['return', 'refund', 'pants'],
-  },
-  {
-    id: 'CT-005',
-    name: 'Alex Thompson',
-    email: 'alex.t@example.com',
-    phone: '+1 (555) 234-5678',
-    subject: 'Website feedback',
-    message: 'I love the new website design! However, I noticed that the search function is a bit slow on mobile devices. Thought you might want to know.',
-    status: 'resolved',
-    priority: 'low',
-    category: 'feedback',
-    submittedAt: '2024-01-13T13:10:00Z',
-    respondedAt: '2024-01-13T15:45:00Z',
-    tags: ['website', 'mobile', 'performance'],
-  },
-];
 
 const statusConfig = {
   new: { label: 'New', icon: AlertCircle, color: 'text-blue-400 bg-blue-500/20' },
@@ -101,12 +32,14 @@ const statusConfig = {
 
 const priorityConfig = {
   low: { label: 'Low', color: 'text-green-400' },
+  medium: { label: 'Medium', color: 'text-yellow-400' },
   normal: { label: 'Normal', color: 'text-blue-400' },
   high: { label: 'High', color: 'text-red-400' },
   urgent: { label: 'Urgent', color: 'text-red-500' },
 };
 
 const categoryConfig = {
+  general: { label: 'General', icon: MessageSquare },
   product_inquiry: { label: 'Product Inquiry', icon: MessageSquare },
   order_support: { label: 'Order Support', icon: Archive },
   returns: { label: 'Returns', icon: Reply },
@@ -116,12 +49,13 @@ const categoryConfig = {
 };
 
 export default function ContactsPage() {
+  const { state, dispatch, removeDemoItems } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  const filteredContacts = contacts.filter(contact => {
+  const filteredContacts = state.contacts.filter(contact => {
     const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          contact.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -189,13 +123,46 @@ export default function ContactsPage() {
         </div>
       </motion.div>
 
+      {/* Demo Items Banner */}
+      {state.contacts.some(c => c.isDemo) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "flex items-center justify-between p-4 rounded-lg",
+            "bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30"
+          )}
+        >
+          <div className="flex items-center space-x-3">
+            <Sparkles className="text-purple-400" size={20} />
+            <div>
+              <h3 className="text-white font-medium">Demo Contacts Active</h3>
+              <p className="text-purple-300 text-sm">These are example contact requests to help you get started</p>
+            </div>
+          </div>
+          <motion.button
+            onClick={removeDemoItems}
+            className={cn(
+              "flex items-center space-x-2 px-4 py-2",
+              "bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg",
+              "hover:from-red-600 hover:to-pink-600 transition-all duration-200"
+            )}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <X size={16} />
+            <span>Remove All Demo Items</span>
+          </motion.button>
+        </motion.div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { title: 'Total Requests', value: contacts.length, icon: Mail, color: 'from-blue-500 to-cyan-500' },
-          { title: 'New', value: contacts.filter(c => c.status === 'new').length, icon: AlertCircle, color: 'from-blue-500 to-indigo-500' },
-          { title: 'In Progress', value: contacts.filter(c => c.status === 'in_progress').length, icon: Clock, color: 'from-yellow-500 to-orange-500' },
-          { title: 'Resolved', value: contacts.filter(c => c.status === 'resolved').length, icon: CheckCircle, color: 'from-green-500 to-emerald-500' },
+          { title: 'Total Requests', value: state.contacts.length, icon: Mail, color: 'from-blue-500 to-cyan-500' },
+          { title: 'New', value: state.contacts.filter(c => c.status === 'new').length, icon: AlertCircle, color: 'from-blue-500 to-indigo-500' },
+          { title: 'In Progress', value: state.contacts.filter(c => c.status === 'in_progress').length, icon: Clock, color: 'from-yellow-500 to-orange-500' },
+          { title: 'Resolved', value: state.contacts.filter(c => c.status === 'resolved').length, icon: CheckCircle, color: 'from-green-500 to-emerald-500' },
         ].map((stat, index) => (
           <motion.div
             key={stat.title}
@@ -352,7 +319,17 @@ export default function ContactsPage() {
                           </span>
                         </div>
                         <div>
-                          <div className="text-white font-medium">{contact.name}</div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-white font-medium">{contact.name}</span>
+                            {contact.isDemo && (
+                              <span className={cn(
+                                "px-2 py-1 text-xs font-medium rounded-full",
+                                "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                              )}>
+                                DEMO
+                              </span>
+                            )}
+                          </div>
                           <div className="text-neutral-400 text-sm">{contact.email}</div>
                           {contact.phone && (
                             <div className="text-neutral-500 text-xs flex items-center">
@@ -388,12 +365,12 @@ export default function ContactsPage() {
                       </div>
                     </td>
                     <td className="p-4 text-neutral-400 text-sm">
-                      {formatDate(contact.submittedAt)}
+                      {contact.submittedAt ? formatDate(contact.submittedAt) : formatDate(contact.createdAt)}
                     </td>
                     <td className="p-4 text-neutral-400 text-sm">
                       {contact.respondedAt ? (
                         <span className="text-green-400">
-                          {getResponseTime(contact.submittedAt, contact.respondedAt)}
+                          {getResponseTime(contact.submittedAt || contact.createdAt, contact.respondedAt)}
                         </span>
                       ) : (
                         <span className="text-yellow-400">Pending</span>
@@ -416,11 +393,15 @@ export default function ContactsPage() {
                           <Reply className="text-neutral-400" size={16} />
                         </motion.button>
                         <motion.button
-                          className="p-2 hover:bg-white/10 rounded-lg transition-all"
+                          onClick={() => dispatch({ type: 'DELETE_CONTACT', payload: contact.id })}
+                          className={cn(
+                            "p-2 hover:bg-red-500/20 rounded-lg transition-all",
+                            contact.isDemo && "hover:bg-purple-500/20"
+                          )}
                           whileHover={{ scale: 1.05 }}
-                          title="Archive"
+                          title={contact.isDemo ? "Remove Demo Contact" : "Archive"}
                         >
-                          <Archive className="text-neutral-400" size={16} />
+                          <Trash2 className={contact.isDemo ? "text-purple-400" : "text-neutral-400"} size={16} />
                         </motion.button>
                       </div>
                     </td>
