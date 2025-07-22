@@ -10,7 +10,8 @@ import { products } from '@/data/products';
 import { useCart } from '@/contexts/CartContext';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { ShoppingCart, Eye, Filter, ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShoppingCart, Eye, Filter, ArrowUpDown, ChevronDown } from 'lucide-react';
+import { Product } from '@/data/products';
 
 export default function ProductsPage() {
   const { dispatch } = useCart();
@@ -41,7 +42,7 @@ export default function ProductsPage() {
   ];
   
   const filteredAndSortedProducts = React.useMemo(() => {
-    let filtered = selectedCategory === 'all' 
+    const filtered = selectedCategory === 'all' 
       ? products 
       : products.filter(product => 
           product.category.toLowerCase() === selectedCategory.replace('-', ' ')
@@ -76,7 +77,7 @@ export default function ProductsPage() {
     });
   }, [selectedCategory, sortBy, sortOrder]);
 
-  const addToCart = (product: any) => {
+  const addToCart = (product: Product) => {
     dispatch({
       type: 'ADD_ITEM',
       payload: {

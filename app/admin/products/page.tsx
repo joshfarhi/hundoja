@@ -7,15 +7,12 @@ import Image from 'next/image';
 import {
   Plus,
   Search,
-  Filter,
   Edit,
   Trash2,
   Eye,
   Star,
   Package,
-  DollarSign,
   ChevronDown,
-  MoreHorizontal,
   AlertCircle,
   CheckCircle,
 } from 'lucide-react';
@@ -110,7 +107,6 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [showAddModal, setShowAddModal] = useState(false);
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -137,7 +133,6 @@ export default function ProductsPage() {
           <p className="text-neutral-400 mt-1">Manage your product inventory and listings</p>
         </div>
         <motion.button
-          onClick={() => setShowAddModal(true)}
           className={cn(
             "flex items-center space-x-2 px-4 py-2",
             "bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg",

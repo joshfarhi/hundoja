@@ -91,7 +91,7 @@ export default function AdminDashboard() {
       >
         <div>
           <h1 className="text-3xl font-bold text-white">Dashboard Overview</h1>
-          <p className="text-neutral-400 mt-1">Welcome back! Here's what's happening with your store.</p>
+          <p className="text-neutral-400 mt-1">Welcome back! Here&apos;s what&apos;s happening with your store.</p>
         </div>
         <motion.button
           className={cn(

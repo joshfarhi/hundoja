@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { products } from '@/data/products';
+import { products, Product } from '@/data/products';
 import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/lib/utils';
 import { ShoppingCart, Eye } from 'lucide-react';
@@ -13,7 +13,7 @@ export default function FeaturedProducts() {
   const { dispatch } = useCart();
   const featuredProducts = products.filter(product => product.featured);
 
-  const addToCart = (product: any) => {
+  const addToCart = (product: Product) => {
     dispatch({
       type: 'ADD_ITEM',
       payload: {

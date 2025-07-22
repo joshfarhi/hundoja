@@ -5,14 +5,11 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import {
   Search,
-  Filter,
   Download,
   Eye,
   Edit,
   Trash2,
   ChevronDown,
-  Calendar,
-  DollarSign,
   Package,
   Truck,
   CheckCircle,
@@ -103,7 +100,6 @@ const statusConfig = {
 export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

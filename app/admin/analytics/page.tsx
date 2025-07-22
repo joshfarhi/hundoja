@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { BarChart3, TrendingUp, PieChart, Activity } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 
 export default function AnalyticsPage() {
   return (

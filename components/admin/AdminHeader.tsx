@@ -4,7 +4,7 @@ import React from 'react';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Bell, Search, Menu } from 'lucide-react';
+import { Bell, Search } from 'lucide-react';
 
 export default function AdminHeader() {
   const { user } = useUser();

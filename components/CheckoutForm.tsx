@@ -59,7 +59,7 @@ export default function CheckoutForm() {
         dispatch({ type: 'CLEAR_CART' });
         router.push('/checkout/success');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred during payment');
     } finally {
       setIsLoading(false);

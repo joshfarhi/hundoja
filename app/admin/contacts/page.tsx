@@ -6,18 +6,15 @@ import { cn } from '@/lib/utils';
 import {
   Mail,
   Search,
-  Filter,
   Eye,
   Reply,
   Archive,
-  Trash2,
   Star,
   Clock,
   CheckCircle,
   AlertCircle,
   MessageSquare,
   User,
-  Calendar,
   Phone,
   ChevronDown,
 } from 'lucide-react';

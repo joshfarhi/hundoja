@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { Users, UserPlus, Mail, Phone, MapPin, Calendar, DollarSign, ShoppingBag } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 export default function CustomersPage() {
   return (

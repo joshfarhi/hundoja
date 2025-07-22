@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { Settings, Globe, Bell, Shield, Database } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
 export default function SettingsPage() {
   return (
