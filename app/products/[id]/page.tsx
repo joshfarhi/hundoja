@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import Navigation from '@/components/Navigation';
@@ -11,17 +11,39 @@ import { useCart } from '@/contexts/CartContext';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 
-export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const product = products.find(p => p.id === id);
+interface ProductPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function ProductPage({ params }: ProductPageProps) {
+  const [id, setId] = useState<string>('');
+  const [product, setProduct] = useState<any>(null);
   const { dispatch } = useCart();
   
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  if (!product) {
+  useEffect(() => {
+    async function getParams() {
+      const resolvedParams = await params;
+      setId(resolvedParams.id);
+      const foundProduct = products.find(p => p.id === resolvedParams.id);
+      setProduct(foundProduct);
+    }
+    getParams();
+  }, [params]);
+
+  if (!id) {
+    return <div>Loading...</div>;
+  }
+
+  if (id && !product) {
     notFound();
+  }
+
+  if (!product) {
+    return <div>Loading...</div>;
   }
 
   const addToCart = () => {

@@ -1,51 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth, UserButton } from '@clerk/nextjs';
 import { ShoppingBag, Menu, X, Home, Store, User, Mail } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '@/lib/supabase';
 
 export default function Navigation() {
-  const { isSignedIn, userId } = useAuth();
+  const { isSignedIn } = useAuth();
   const { state, dispatch } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  
-  // Check if user is admin from database
-  useEffect(() => {
-    async function checkAdminStatus() {
-      if (!userId) {
-        setIsAdmin(false);
-        return;
-      }
-      
-      try {
-        const { data, error } = await supabase
-          .from('admin_users')
-          .select('id, role')
-          .eq('clerk_user_id', userId)
-          .eq('is_active', true);
-        
-        setIsAdmin(!error && data && data.length > 0);
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdmin(false);
-      }
-    }
-    
-    checkAdminStatus();
-  }, [userId]);
 
   const navItems = [
     { name: 'Home', link: '/', icon: <Home size={20} /> },
     { name: 'Shop', link: '/products', icon: <Store size={20} /> },
     { name: 'About', link: '/about', icon: <User size={20} /> },
     { name: 'Contact', link: '/contact', icon: <Mail size={20} /> },
-    ...(isAdmin ? [{ name: 'Admin', link: '/admin', icon: <User size={20} /> }] : []),
   ];
 
   return (
