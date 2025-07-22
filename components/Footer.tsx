@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Instagram, Twitter, Facebook, Mail } from 'lucide-react';
+import NewsletterForm from './NewsletterForm';
 
 export default function Footer() {
   return (
@@ -13,6 +14,13 @@ export default function Footer() {
               Premium streetwear brand dedicated to quality, style, and authentic urban culture. 
               Every piece tells a story of craftsmanship and design excellence.
             </p>
+            
+            {/* Newsletter Form */}
+            <div className="mb-6 max-w-md">
+              <h4 className="text-white font-semibold mb-3">Stay in the Loop</h4>
+              <NewsletterForm variant="footer" />
+            </div>
+
             <div className="flex space-x-4">
               <a href="#" className="text-white hover:text-gray-300 transition-colors">
                 <Instagram size={24} />

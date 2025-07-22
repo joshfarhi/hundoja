@@ -164,10 +164,21 @@ CREATE TABLE IF NOT EXISTS public.analytics_events (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Create email_settings table (for Gmail configuration)
+CREATE TABLE IF NOT EXISTS public.email_settings (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_value TEXT,
+    encrypted BOOLEAN DEFAULT false,
+    description TEXT,
+    updated_by UUID REFERENCES public.admin_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_admin_users_clerk_id ON public.admin_users(clerk_user_id);
 CREATE INDEX IF NOT EXISTS idx_products_status ON public.products(status);
-CREATE INDEX IF NOT EXISTS idx_products_category ON public.products(category);
 CREATE INDEX IF NOT EXISTS idx_products_featured ON public.products(featured);
 CREATE INDEX IF NOT EXISTS idx_products_sku ON public.products(sku);
 CREATE INDEX IF NOT EXISTS idx_customers_email ON public.customers(email);
@@ -180,10 +191,10 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items(order_
 CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON public.order_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_contact_requests_status ON public.contact_requests(status);
 CREATE INDEX IF NOT EXISTS idx_contact_requests_priority ON public.contact_requests(priority);
-CREATE INDEX IF NOT EXISTS idx_contact_requests_category ON public.contact_requests(category);
 CREATE INDEX IF NOT EXISTS idx_inventory_logs_product_id ON public.inventory_logs(product_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_name ON public.analytics_events(event_name);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON public.analytics_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_email_settings_key ON public.email_settings(setting_key);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
@@ -195,6 +206,7 @@ ALTER TABLE public.contact_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.product_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.inventory_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_settings ENABLE ROW LEVEL SECURITY;
 
 -- Create RLS policies
 
@@ -242,6 +254,15 @@ CREATE POLICY "Customers can view own orders" ON public.orders
 CREATE POLICY "Public can view active products" ON public.products
     FOR SELECT USING (status = 'active');
 
+-- Admin users can manage email settings
+CREATE POLICY "Admin users can manage email settings" ON public.email_settings
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.admin_users 
+            WHERE clerk_user_id = auth.jwt() ->> 'sub' AND is_active = true
+        )
+    );
+
 -- Functions for automatic updates
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
@@ -268,6 +289,9 @@ CREATE TRIGGER handle_updated_at BEFORE UPDATE ON public.contact_requests
     FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
 
 CREATE TRIGGER handle_updated_at BEFORE UPDATE ON public.product_categories
+    FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
+
+CREATE TRIGGER handle_updated_at BEFORE UPDATE ON public.email_settings
     FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
 
 -- Function to generate order numbers
@@ -377,4 +401,10 @@ VALUES ('your-clerk-user-id', 'your-email@example.com', 'Your Name', 'super_admi
 -- VALUES ('user_2xxx', 'you@example.com', 'Your Name', 'super_admin', true);
 
 -- Refresh schema cache
-NOTIFY pgrst, 'reload schema';
+NOTIFY pgrst, 'reload schema';-- Insert default Gmail settings
+INSERT INTO public.email_settings (setting_key, setting_value, encrypted, description) VALUES
+('gmail_user', '', false, 'Gmail email address for sending newsletters and notifications'),
+('gmail_app_password', '', true, 'Gmail app password for SMTP authentication'),
+('newsletter_from_name', 'Hundoja', false, 'Display name for newsletter emails'),
+('admin_notification_enabled', 'true', false, 'Enable admin notifications for new subscribers')
+ON CONFLICT (setting_key) DO NOTHING;

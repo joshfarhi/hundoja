@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import NewsletterForm from './NewsletterForm';
 
 export default function Hero() {
   return (
@@ -35,7 +36,7 @@ export default function Hero() {
         </motion.p>
         
         <motion.div
-          className="flex flex-col sm:flex-row gap-4 justify-center"
+          className="flex flex-col sm:flex-row gap-4 justify-center mb-8"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
@@ -52,6 +53,16 @@ export default function Hero() {
           >
             LEARN MORE
           </Link>
+        </motion.div>
+
+        {/* Newsletter Form */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.8 }}
+          className="max-w-md mx-auto"
+        >
+          <NewsletterForm variant="hero" />
         </motion.div>
       </div>
 

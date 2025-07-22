@@ -1,24 +1,220 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings } from 'lucide-react';
+import { Settings, Mail, Save, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface EmailSetting {
+  id: string;
+  setting_key: string;
+  setting_value: string;
+  encrypted: boolean;
+  description: string;
+}
 
 export default function SettingsPage() {
+  const [settings, setSettings] = useState<EmailSetting[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [status, setStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/settings');
+      if (!response.ok) throw new Error('Failed to fetch settings');
+      
+      const data = await response.json();
+      setSettings(data);
+      
+      // Initialize form data
+      const initialData: Record<string, string> = {};
+      data.forEach((setting: EmailSetting) => {
+        initialData[setting.setting_key] = setting.setting_value || '';
+      });
+      setFormData(initialData);
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      setStatus({ type: 'error', message: 'Failed to load settings' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (key: string, value: string) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const togglePasswordVisibility = (key: string) => {
+    setShowPasswords(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setStatus({ type: null, message: '' });
+
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Failed to save settings');
+
+      setStatus({ type: 'success', message: 'Settings saved successfully!' });
+      await fetchSettings(); // Refresh data
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setStatus({ type: 'error', message: 'Failed to save settings' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-white">Loading settings...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center"
+        className="max-w-2xl"
       >
-        <h1 className="text-3xl font-bold text-white">Admin Settings</h1>
-        <p className="text-neutral-400 mt-1">Configure system settings and preferences</p>
-        <div className="mt-8 p-12 rounded-xl bg-gradient-to-br from-neutral-900/80 to-neutral-800/40 border border-white/10">
-          <Settings className="mx-auto text-neutral-600 mb-4" size={64} />
-          <p className="text-neutral-400 text-lg">Settings panel coming soon</p>
-          <p className="text-neutral-500 text-sm">This section will include system configuration, notifications, and admin preferences</p>
+        <div className="flex items-center space-x-3 mb-6">
+          <Settings className="text-cyan-400" size={24} />
+          <h1 className="text-2xl font-bold text-white">Email Settings</h1>
         </div>
+
+        <div className="bg-zinc-900 rounded-lg p-6 space-y-6">
+          <div className="flex items-start space-x-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <Mail className="text-blue-400 mt-0.5" size={20} />
+            <div>
+              <h3 className="text-blue-400 font-semibold">Gmail Configuration</h3>
+              <p className="text-gray-300 text-sm mt-1">
+                Configure your Gmail credentials to enable newsletter subscriptions and admin notifications. 
+                You'll need to generate an App Password from your Google Account settings.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {settings.map((setting) => (
+              <div key={setting.id} className="space-y-2">
+                <label className="block text-sm font-medium text-white">
+                  {setting.setting_key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </label>
+                <p className="text-xs text-gray-400 mb-2">{setting.description}</p>
+                
+                <div className="relative">
+                  {setting.encrypted ? (
+                    <div className="flex">
+                      <input
+                        type={showPasswords[setting.setting_key] ? 'text' : 'password'}
+                        value={formData[setting.setting_key] || ''}
+                        onChange={(e) => handleInputChange(setting.setting_key, e.target.value)}
+                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-l-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50"
+                        placeholder={setting.setting_key === 'gmail_app_password' ? 'Enter Gmail App Password' : 'Enter value'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => togglePasswordVisibility(setting.setting_key)}
+                        className="bg-zinc-800 border border-l-0 border-zinc-700 rounded-r-lg px-3 text-gray-400 hover:text-white transition-colors"
+                      >
+                        {showPasswords[setting.setting_key] ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  ) : (
+                    <input
+                      type={setting.setting_key === 'gmail_user' ? 'email' : 'text'}
+                      value={formData[setting.setting_key] || ''}
+                      onChange={(e) => handleInputChange(setting.setting_key, e.target.value)}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50"
+                      placeholder={
+                        setting.setting_key === 'gmail_user' ? 'your-email@gmail.com' :
+                        setting.setting_key === 'newsletter_from_name' ? 'Hundoja' : 'Enter value'
+                      }
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Status Messages */}
+          {status.type && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={cn(
+                "flex items-center space-x-2 p-4 rounded-lg",
+                status.type === 'success' && "bg-green-500/20 text-green-300 border border-green-500/30",
+                status.type === 'error' && "bg-red-500/20 text-red-300 border border-red-500/30"
+              )}
+            >
+              {status.type === 'success' && <CheckCircle size={16} />}
+              {status.type === 'error' && <AlertCircle size={16} />}
+              <span className="text-sm">{status.message}</span>
+            </motion.div>
+          )}
+
+          {/* Save Button */}
+          <div className="flex justify-end pt-4 border-t border-zinc-800">
+            <motion.button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center space-x-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-6 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:from-cyan-600 hover:to-blue-600 transition-all duration-200"
+              whileHover={{ scale: saving ? 1 : 1.02 }}
+              whileTap={{ scale: saving ? 1 : 0.98 }}
+            >
+              {saving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  <span>Save Settings</span>
+                </>
+              )}
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Gmail App Password Instructions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mt-6 bg-zinc-900 rounded-lg p-6"
+        >
+          <h3 className="text-white font-semibold mb-4">How to Generate Gmail App Password:</h3>
+          <ol className="text-gray-300 text-sm space-y-2 list-decimal list-inside">
+            <li>Go to your Google Account settings</li>
+            <li>Navigate to Security → 2-Step Verification</li>
+            <li>At the bottom, select "App passwords"</li>
+            <li>Select "Mail" and choose your device</li>
+            <li>Copy the 16-character app password and paste it above</li>
+          </ol>
+          <p className="text-yellow-400 text-xs mt-4">
+            ⚠️ Note: You must have 2-Step Verification enabled on your Google account to generate app passwords.
+          </p>
+        </motion.div>
       </motion.div>
     </div>
   );
