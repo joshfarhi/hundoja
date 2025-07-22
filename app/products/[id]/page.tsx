@@ -11,8 +11,9 @@ import { useCart } from '@/contexts/CartContext';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 
-export default function ProductPage({ params }: { params: { id: string } }) {
-  const product = products.find(p => p.id === params.id);
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const product = products.find(p => p.id === id);
   const { dispatch } = useCart();
   
   const [selectedSize, setSelectedSize] = useState('');
