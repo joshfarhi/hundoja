@@ -8,9 +8,9 @@ export default function Hero() {
   return (
     <section className="relative h-screen flex items-center justify-center overflow-hidden">
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat grayscale"
         style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=1080&fit=crop)',
+          backgroundImage: 'url(/hundoja-hero.jpg)',
         }}
       />
       <div className="absolute inset-0 bg-black/60" />
