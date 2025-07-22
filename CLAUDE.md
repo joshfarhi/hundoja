@@ -21,6 +21,7 @@ cp .env.local.example .env.local  # Copy environment template (if exists)
 
 - **Framework**: Next.js 15.4.2 with App Router and Turbopack for development
 - **Authentication**: Clerk integration with middleware-protected routes
+- **Database**: Supabase PostgreSQL with comprehensive schema for e-commerce
 - **Payments**: Stripe integration with server-side payment intents
 - **State Management**: React Context for cart functionality
 - **UI**: Aceternity UI components, Tailwind CSS, Framer Motion animations
@@ -48,13 +49,24 @@ cp .env.local.example .env.local  # Copy environment template (if exists)
    - API route: `/api/create-payment-intent` handles secure payment setup
    - Client-side checkout form with Stripe Elements
 
+5. **Database Architecture**:
+   - Supabase PostgreSQL with comprehensive e-commerce schema
+   - Complete product management with categories and variants
+   - Customer management synced with Clerk authentication
+   - Order processing with full lifecycle tracking
+   - Contact request management system
+   - Analytics and reporting tables
+   - Row Level Security (RLS) for data protection
+
 ## Important Files & Directories
 
 - `app/layout.tsx` - Root layout with Clerk and Cart providers
 - `contexts/CartContext.tsx` - Global cart state management
 - `data/products.ts` - Static product data with TypeScript interfaces
 - `lib/stripe.ts` - Stripe configuration and utilities
+- `lib/supabase.ts` - Supabase client configuration
 - `middleware.ts` - Clerk authentication middleware
+- `supabase-schema.sql` - Complete database schema for e-commerce
 - `components/` - Reusable UI components including cart sidebar, navigation
 - `app/api/` - Server-side API routes for payments
 
@@ -74,6 +86,10 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
+# Supabase Database
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+
 # Application
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
@@ -92,8 +108,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 The application includes a full-featured admin dashboard at `/admin` with the following features:
 
 ### Access Control
-- **Role-based authentication** using Clerk metadata (`role: 'admin'`)
-- **Protected routes** via middleware for admin-only access
+- **Database-driven authentication** using Supabase `admin_users` table
+- **Clerk integration** with user ID mapping to admin privileges
+- **Protected layout** in `app/admin/layout.tsx` with async admin verification
 - **Automatic redirects** for unauthorized users
 
 ### Admin Features
@@ -112,9 +129,13 @@ The application includes a full-featured admin dashboard at `/admin` with the fo
 
 ### Setting Up Admin Access
 To grant admin access to a user:
-1. In Clerk Dashboard, go to the user's profile
-2. Add custom metadata: `{ "role": "admin" }`
-3. User will automatically see admin navigation and have access to `/admin`
+1. Get the user's Clerk user ID from their profile
+2. Insert a record in the Supabase `admin_users` table:
+   ```sql
+   INSERT INTO admin_users (clerk_user_id, role, is_active) 
+   VALUES ('user_xxxxxxxxxx', 'admin', true);
+   ```
+3. User will automatically have access to `/admin` on next login
 
 ## Development Notes
 
@@ -123,3 +144,35 @@ To grant admin access to a user:
 - Responsive design with mobile-first approach
 - Dark theme with black/white color scheme inspired by streetwear brands
 - Admin dashboard uses Aceternity UI components for consistent styling
+
+## Database Schema
+
+The application uses a comprehensive Supabase PostgreSQL schema (`supabase-schema.sql`) with the following key tables:
+
+### Core E-commerce Tables
+- `categories` - Product categories with slugs and metadata
+- `products` - Main product catalog with SEO fields and JSONB metadata
+- `product_variants` - Size/color/attribute variants with individual SKUs
+- `customers` - Customer profiles synced with Clerk authentication
+- `customer_addresses` - Shipping and billing addresses
+
+### Order Management
+- `orders` - Complete order lifecycle with status tracking
+- `order_items` - Individual line items with product snapshots
+- `stock_movements` - Inventory tracking and audit trail
+
+### Admin & Support
+- `admin_users` - Admin access control (maps to Clerk user IDs)
+- `contact_requests` - Customer support ticket system
+- `contact_responses` - Support conversation threads
+
+### Analytics & Reporting
+- `daily_analytics` - Aggregated daily metrics
+- `system_settings` - Configurable application settings
+
+### Key Features
+- **Row Level Security (RLS)** enabled on sensitive tables
+- **Comprehensive indexing** for performance
+- **Automatic timestamp triggers** for audit trails
+- **Full-text search** capabilities with PostgreSQL extensions
+- **JSONB fields** for flexible metadata storage
