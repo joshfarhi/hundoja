@@ -125,7 +125,7 @@ export default function NewsletterForm({ variant = 'footer', className }: Newsle
           ) : (
             <>
               <Send size={16} />
-              <span>Subscribe</span>
+              <span>SUBSCRIBE</span>
             </>
           )}
         </motion.button>

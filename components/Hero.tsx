@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import NewsletterForm from './NewsletterForm';
+import Image from 'next/image';
 
 export default function Hero() {
   return (
@@ -17,14 +18,14 @@ export default function Hero() {
       <div className="absolute inset-0 bg-black/60" />
       
       <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
-        <motion.h1 
-          className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight"
+        <motion.div 
+          className="mb-6 flex justify-center"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          HUNDOJA
-        </motion.h1>
+          <Image src="/Hundoja-2025-logo.webp" alt="Hundoja Logo" width={400} height={133} priority />
+        </motion.div>
         
         <motion.p 
           className="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto"

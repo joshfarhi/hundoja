@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Instagram, Twitter, Facebook, Mail } from 'lucide-react';
 import NewsletterForm from './NewsletterForm';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
@@ -9,7 +10,9 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
-            <h3 className="text-2xl font-bold text-white mb-4">HUNDOJA</h3>
+            <div className="mb-4">
+              <Image src="/Hundoja-2025-logo.webp" alt="Hundoja Logo" width={150} height={50} />
+            </div>
             <p className="text-gray-400 mb-6 max-w-md">
               Premium streetwear brand dedicated to quality, style, and authentic urban culture. 
               Every piece tells a story of craftsmanship and design excellence.
