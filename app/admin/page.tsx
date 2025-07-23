@@ -68,17 +68,17 @@ export default function AdminDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
+        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold text-white">Dashboard Overview</h1>
-          <p className="text-neutral-400 mt-1">Welcome back! Here&apos;s what&apos;s happening with your store.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Dashboard Overview</h1>
+          <p className="text-neutral-400 mt-1 text-sm sm:text-base">Welcome back! Here&apos;s what&apos;s happening with your store.</p>
         </div>
         <motion.button
           className={cn(
             "px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500",
             "text-white rounded-lg hover:from-cyan-600 hover:to-blue-600",
-            "transition-all duration-200"
+            "transition-all duration-200 text-sm sm:text-base"
           )}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -99,9 +99,9 @@ export default function AdminDashboard() {
         >
           <div className="flex items-center space-x-3">
             <Sparkles className="text-purple-400" size={20} />
-            <div>
+            <div className="flex-1">
               <h3 className="text-white font-medium">Demo Data Active</h3>
-              <p className="text-purple-300 text-sm">
+              <p className="text-purple-300 text-sm leading-tight mt-1">
                 You have {state.products.filter(p => p.isDemo).length} demo products, {' '}
                 {state.orders.filter(o => o.isDemo).length} demo orders, and {' '}
                 {state.contacts.filter(c => c.isDemo).length} demo contacts
@@ -111,21 +111,21 @@ export default function AdminDashboard() {
           <motion.button
             onClick={removeDemoItems}
             className={cn(
-              "flex items-center space-x-2 px-4 py-2",
+              "flex items-center space-x-2 px-3 py-2 sm:px-4",
               "bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg",
-              "hover:from-red-600 hover:to-pink-600 transition-all duration-200"
+              "hover:from-red-600 hover:to-pink-600 transition-all duration-200 text-xs sm:text-sm"
             )}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             <X size={16} />
-            <span>Remove All Demo Items</span>
+            <span className="hidden sm:inline">Remove All Demo Items</span>
           </motion.button>
         </motion.div>
       )}
 
       {/* Quick Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -267,12 +267,12 @@ export default function AdminDashboard() {
           <table className="w-full">
             <thead className="bg-neutral-800/50">
               <tr>
-                <th className="text-left p-4 text-neutral-300 font-medium">Order ID</th>
-                <th className="text-left p-4 text-neutral-300 font-medium">Customer</th>
-                <th className="text-left p-4 text-neutral-300 font-medium">Product</th>
+                <th className="text-left p-4 text-neutral-300 font-medium">Order</th>
+                <th className="hidden sm:table-cell text-left p-4 text-neutral-300 font-medium">Customer</th>
+                <th className="hidden md:table-cell text-left p-4 text-neutral-300 font-medium">Product</th>
                 <th className="text-left p-4 text-neutral-300 font-medium">Amount</th>
-                <th className="text-left p-4 text-neutral-300 font-medium">Status</th>
-                <th className="text-left p-4 text-neutral-300 font-medium">Date</th>
+                <th className="hidden lg:table-cell text-left p-4 text-neutral-300 font-medium">Status</th>
+                <th className="hidden lg:table-cell text-left p-4 text-neutral-300 font-medium">Date</th>
                 <th className="text-left p-4 text-neutral-300 font-medium">Action</th>
               </tr>
             </thead>
@@ -287,10 +287,10 @@ export default function AdminDashboard() {
                 >
                   <td className="p-4">
                     <div className="flex items-center space-x-2">
-                      <span className="text-white font-medium">{order.id}</span>
+                      <span className="text-white font-medium truncate">{order.id}</span>
                       {order.isDemo && (
                         <span className={cn(
-                          "px-2 py-1 text-xs font-medium rounded-full",
+                          "px-2 py-1 text-xs font-medium rounded-full flex-shrink-0",
                           "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                         )}>
                           DEMO
@@ -298,15 +298,15 @@ export default function AdminDashboard() {
                       )}
                     </div>
                   </td>
-                  <td className="p-4 text-neutral-300">{order.customer.name}</td>
-                  <td className="p-4 text-neutral-300">
+                  <td className="hidden sm:table-cell p-4 text-neutral-300">{order.customer.name}</td>
+                  <td className="hidden md:table-cell p-4 text-neutral-300">
                     {order.products.length > 1 
                       ? `${order.products[0].name} +${order.products.length - 1} more`
                       : order.products[0]?.name
                     }
                   </td>
                   <td className="p-4 text-white font-semibold">${order.total.toFixed(2)}</td>
-                  <td className="p-4">
+                  <td className="hidden lg:table-cell p-4">
                     <span className={cn(
                       "px-3 py-1 rounded-full text-xs font-medium capitalize",
                       order.status === 'completed' && "bg-green-500/20 text-green-400",
@@ -318,7 +318,7 @@ export default function AdminDashboard() {
                       {order.status}
                     </span>
                   </td>
-                  <td className="p-4 text-neutral-400">
+                  <td className="hidden lg:table-cell p-4 text-neutral-400">
                     {new Date(order.orderDate).toLocaleDateString()}
                   </td>
                   <td className="p-4">

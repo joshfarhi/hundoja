@@ -7,6 +7,9 @@ import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminProvider } from '@/contexts/AdminContext';
 import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
+import { AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export default function AdminLayout({
   children,
@@ -15,6 +18,8 @@ export default function AdminLayout({
 }) {
   const { isLoaded, userId } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     async function checkAdminStatus() {
@@ -56,12 +61,37 @@ export default function AdminLayout({
 
   return (
     <AdminProvider>
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen bg-black text-white">
         <div className="flex">
-          <AdminSidebar />
-          <div className="flex-1 ml-64">
-            <AdminHeader />
-            <main className="p-6">
+          <AdminSidebar 
+            isSidebarOpen={isSidebarOpen} 
+            isCollapsed={isCollapsed} 
+            onCollapseToggle={() => setIsCollapsed(!isCollapsed)}
+            onMobileClose={() => setIsSidebarOpen(false)}
+          />
+          
+          {/* Overlay for mobile */}
+          <AnimatePresence>
+            {isSidebarOpen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsSidebarOpen(false)}
+                className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+              />
+            )}
+          </AnimatePresence>
+
+          <div className={cn(
+            "flex-1 transition-all duration-300",
+            {
+              "lg:ml-64": !isCollapsed,
+              "lg:ml-20": isCollapsed,
+            }
+          )}>
+            <AdminHeader onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+            <main className="p-4 sm:p-6">
               {children}
             </main>
           </div>

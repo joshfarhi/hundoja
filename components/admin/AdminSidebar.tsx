@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { UserButton, useUser } from '@clerk/nextjs';
+import Image from 'next/image';
 import {
   LayoutDashboard,
   Package,
@@ -55,117 +57,129 @@ const sidebarItems = [
   },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ isSidebarOpen, isCollapsed: isDesktopCollapsed, onCollapseToggle, onMobileClose }: { isSidebarOpen: boolean, isCollapsed: boolean, onCollapseToggle: () => void, onMobileClose: () => void }) {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { user } = useUser();
 
   return (
-    <motion.div
-      className={cn(
-        "fixed left-0 top-0 z-40 h-screen transition-all duration-300",
-        "bg-gradient-to-b from-neutral-900 to-neutral-800 border-r border-white/10",
-        isCollapsed ? "w-16" : "w-64"
-      )}
-      initial={{ x: -100 }}
-      animate={{ x: 0 }}
-      transition={{ duration: 0.3 }}
-    >
+    <div className={cn(
+      "fixed left-0 top-0 z-40 h-screen bg-neutral-900 border-r border-neutral-800 transition-transform duration-300 ease-in-out flex flex-col",
+      "lg:translate-x-0",
+      isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
+      isDesktopCollapsed ? "lg:w-20" : "lg:w-64",
+      "w-64" // Full width on mobile when open
+    )}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10">
-        {!isCollapsed && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-xl font-bold text-white"
-          >
-            HUNDOJA ADMIN
-          </motion.div>
-        )}
-        <motion.button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/10 transition-all"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
+      <div className={cn(
+        "flex items-center border-b border-neutral-800 h-16 flex-shrink-0 px-4",
+        isDesktopCollapsed ? "lg:justify-center" : "lg:justify-between"
+      )}>
+        <AnimatePresence>
+          {!isDesktopCollapsed && (
+            <motion.div
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 'auto' }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.2 }}
+              className="whitespace-nowrap overflow-hidden"
+            >
+              <Image src="/Hundoja-2025-logo.webp" alt="Hundoja Logo" width={120} height={40} className="mt-2" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        <button
+          onClick={onCollapseToggle}
+          className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors hidden lg:block"
         >
-          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-        </motion.button>
+          {isDesktopCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={20} />}
+        </button>
+
+        <button
+          onClick={onMobileClose}
+          className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors lg:hidden"
+        >
+          <ChevronLeft size={20} />
+        </button>
       </div>
 
       {/* Navigation */}
-      <nav className="p-4 space-y-2">
-        {sidebarItems.map((item, index) => {
+      <nav className="p-4 space-y-2 flex-grow">
+        {sidebarItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
 
           return (
-            <motion.div
-              key={item.href}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Link href={item.href}>
-                <motion.div
+            <Link href={item.href} title={item.title} key={item.href}>
+              <motion.div
+                className={cn(
+                  "flex items-center space-x-4 px-3 py-3 rounded-lg transition-colors duration-200",
+                  "hover:bg-neutral-800 group relative",
+                  isActive && "bg-cyan-500/10",
+                  isDesktopCollapsed && "lg:justify-center lg:space-x-0"
+                )}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Icon 
+                  size={22} 
                   className={cn(
-                    "flex items-center space-x-3 px-3 py-3 rounded-lg transition-all duration-200",
-                    "hover:bg-white/10 group relative overflow-hidden",
-                    isActive && "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30"
-                  )}
-                  whileHover={{ x: 4 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Icon 
-                    size={20} 
-                    className={cn(
-                      "transition-colors",
-                      isActive ? "text-cyan-400" : "text-neutral-400 group-hover:text-white"
-                    )} 
-                  />
-                  {!isCollapsed && (
+                    "transition-colors flex-shrink-0",
+                    isActive ? "text-cyan-400" : "text-neutral-400 group-hover:text-white"
+                  )} 
+                />
+                <AnimatePresence>
+                  {(!isDesktopCollapsed || isSidebarOpen) && (
                     <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: 'auto' }}
+                      exit={{ opacity: 0, width: 0, transition: { duration: 0.1 } }}
+                      transition={{ duration: 0.2, delay: 0.1 }}
                       className={cn(
-                        "font-medium transition-colors",
+                        "font-medium whitespace-nowrap overflow-hidden",
                         isActive ? "text-white" : "text-neutral-300 group-hover:text-white"
                       )}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
                     >
                       {item.title}
                     </motion.span>
                   )}
-                  {isActive && (
-                    <motion.div
-                      className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent"
-                      initial={{ scaleX: 0 }}
-                      animate={{ scaleX: 1 }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  )}
-                </motion.div>
-              </Link>
-            </motion.div>
+                </AnimatePresence>
+              </motion.div>
+            </Link>
           );
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="absolute bottom-4 left-4 right-4">
+      {/* Footer / User Profile */}
+      <div className="p-4 border-t border-neutral-800 flex-shrink-0">
         <div className={cn(
-          "p-3 rounded-lg bg-gradient-to-r from-neutral-800/50 to-neutral-700/50",
-          "border border-white/10"
-        )}>
-          {!isCollapsed ? (
-            <div className="text-xs text-neutral-400">
-              <div className="font-medium text-white mb-1">Admin Panel</div>
-              <div>Manage your store</div>
-            </div>
-          ) : (
-            <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"></div>
-          )}
+            "flex items-center",
+            isDesktopCollapsed ? "lg:justify-center" : "lg:justify-start lg:space-x-3"
+          )}>
+          <UserButton 
+            appearance={{
+              elements: {
+                avatarBox: "h-10 w-10 ring-2 ring-neutral-700 hover:ring-cyan-500/60 transition-all flex-shrink-0"
+              }
+            }}
+          />
+          <AnimatePresence>
+            {!isDesktopCollapsed && (
+              <motion.div
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.2 }}
+                className="whitespace-nowrap overflow-hidden"
+              >
+                <div className="text-sm font-medium text-white">
+                  {user?.firstName} {user?.lastName}
+                </div>
+                <div className="text-xs text-neutral-400">Administrator</div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
