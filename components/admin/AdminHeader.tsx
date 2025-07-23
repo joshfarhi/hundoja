@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Bell, Search, Menu } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
+import NotificationDropdown from './NotificationDropdown';
 
 const getPageTitle = (pathname: string) => {
   if (pathname.startsWith('/admin/products')) return 'Products';
@@ -20,6 +21,18 @@ const getPageTitle = (pathname: string) => {
 export default function AdminHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const pathname = usePathname();
   const pageTitle = getPageTitle(pathname);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <header className="h-16 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between px-6 sticky top-0 z-30">
@@ -62,17 +75,23 @@ export default function AdminHeader({ onMenuClick }: { onMenuClick: () => void }
           <Search size={20} />
         </button>
         {/* Notifications */}
-        <motion.button
-          className={cn(
-            "relative p-2 text-neutral-400 hover:text-white",
-            "hover:bg-neutral-800 rounded-lg transition-colors"
-          )}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Bell size={20} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-neutral-900"></span>
-        </motion.button>
+        <div ref={notificationRef} className="relative">
+          <motion.button
+            onClick={() => setIsNotificationsOpen(prev => !prev)}
+            className={cn(
+              "relative p-2 text-neutral-400 hover:text-white",
+              "hover:bg-neutral-800 rounded-lg transition-colors"
+            )}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Bell size={20} />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-neutral-900"></span>
+          </motion.button>
+          <AnimatePresence>
+            {isNotificationsOpen && <NotificationDropdown />}
+          </AnimatePresence>
+        </div>
 
         {/* User Button */}
         <UserButton 

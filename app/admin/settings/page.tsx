@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Mail, Save, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import { Settings, Mail, Save, Eye, EyeOff, AlertCircle, CheckCircle, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DebugMode from '@/components/admin/DebugMode';
+import ToggleSwitch from '@/components/ui/ToggleSwitch';
+import Accordion from '@/components/ui/Accordion';
 
 interface EmailSetting {
   id: string;
@@ -196,52 +198,68 @@ export default function SettingsPage() {
             </motion.div>
           )}
 
+          {/* Advanced Settings */}
+          <div className="pt-6 border-t border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-sm font-medium text-white">
+                  Enable Advanced Email Analytics
+                </label>
+                <p className="text-xs text-gray-400 mt-1">
+                  Track open rates, click-throughs, and more.
+                </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <ToggleSwitch
+                  checked={false}
+                  onChange={() => {}}
+                  disabled={true}
+                />
+                <span className="flex items-center space-x-1.5 text-xs text-amber-400 bg-amber-500/20 px-2 py-1 rounded-full border border-amber-500/30">
+                  <Wrench size={12} />
+                  <span>Under Construction</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Save Button */}
-          <div className="flex justify-end pt-4 border-t border-zinc-800">
-            <motion.button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center space-x-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-6 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:from-cyan-600 hover:to-blue-600 transition-all duration-200"
-              whileHover={{ scale: saving ? 1 : 1.02 }}
-              whileTap={{ scale: saving ? 1 : 0.98 }}
-            >
-              {saving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  <span>Save Settings</span>
-                </>
-              )}
-            </motion.button>
+          <div className="flex justify-end pt-6 mt-6 border-t border-zinc-800">
+            <div className="relative group">
+              <motion.button
+                onClick={handleSave}
+                disabled={true} // Always disabled
+                className="flex items-center space-x-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-6 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Save size={16} />
+                <span>Save Settings</span>
+              </motion.button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-neutral-700 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                Settings are currently read-only.
+                <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-neutral-700 rotate-45" />
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Gmail App Password Instructions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-6 bg-zinc-900 rounded-lg p-6"
-        >
-          <h3 className="text-white font-semibold mb-4">How to Generate Gmail App Password:</h3>
-          <ol className="text-gray-300 text-sm space-y-2 list-decimal list-inside">
-            <li>Go to your Google Account settings</li>
-            <li>Navigate to Security → 2-Step Verification</li>
-            <li>At the bottom, select &quot;App passwords&quot;</li>
-            <li>Select &quot;Mail&quot; and choose your device</li>
-            <li>Copy the 16-character app password and paste it above</li>
-          </ol>
-          <p className="text-yellow-400 text-xs mt-4">
-            ⚠️ Note: You must have 2-Step Verification enabled on your Google account to generate app passwords.
-          </p>
-        </motion.div>
         
-        <DebugMode />
+        {/* Accordion for instructions */}
+        <Accordion title="How to Generate Gmail App Password">
+          <div className="p-4 bg-neutral-800/50 rounded-lg">
+            <ol className="text-gray-300 text-sm space-y-2 list-decimal list-inside">
+              <li>Go to your Google Account settings</li>
+              <li>Navigate to Security → 2-Step Verification</li>
+              <li>At the bottom, select &quot;App passwords&quot;</li>
+              <li>Select &quot;Mail&quot; and choose your device</li>
+              <li>Copy the 16-character app password and paste it above</li>
+            </ol>
+            <p className="text-yellow-400 text-xs mt-4">
+              ⚠️ Note: You must have 2-Step Verification enabled on your Google account to generate app passwords.
+            </p>
+          </div>
+        </Accordion>
       </motion.div>
+
+      <DebugMode />
     </div>
   );
 }
