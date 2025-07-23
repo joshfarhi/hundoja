@@ -129,14 +129,11 @@ export default function AdminDashboard() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={cn(
-            "p-4 rounded-lg bg-gradient-to-r from-blue-500/20 to-cyan-500/20",
-            "border border-blue-500/30"
-          )}
+          className="p-4 rounded-lg bg-neutral-800/50 border border-neutral-700"
         >
           <div className="flex items-center space-x-2">
-            <Package className="text-blue-400" size={16} />
-            <span className="text-blue-300 text-sm">Products</span>
+            <Package className="text-neutral-400" size={16} />
+            <span className="text-neutral-300 text-sm">Products</span>
           </div>
           <div className="text-white text-2xl font-bold">{state.products.length}</div>
         </motion.div>
@@ -145,14 +142,11 @@ export default function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className={cn(
-            "p-4 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20",
-            "border border-green-500/30"
-          )}
+          className="p-4 rounded-lg bg-neutral-800/50 border border-neutral-700"
         >
           <div className="flex items-center space-x-2">
-            <ShoppingBag className="text-green-400" size={16} />
-            <span className="text-green-300 text-sm">Orders</span>
+            <ShoppingBag className="text-neutral-400" size={16} />
+            <span className="text-neutral-300 text-sm">Orders</span>
           </div>
           <div className="text-white text-2xl font-bold">{state.orders.length}</div>
         </motion.div>
@@ -161,14 +155,11 @@ export default function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className={cn(
-            "p-4 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20",
-            "border border-purple-500/30"
-          )}
+          className="p-4 rounded-lg bg-neutral-800/50 border border-neutral-700"
         >
           <div className="flex items-center space-x-2">
-            <Mail className="text-purple-400" size={16} />
-            <span className="text-purple-300 text-sm">Contacts</span>
+            <Mail className="text-neutral-400" size={16} />
+            <span className="text-neutral-300 text-sm">Contacts</span>
           </div>
           <div className="text-white text-2xl font-bold">{state.contacts.length}</div>
         </motion.div>
@@ -177,14 +168,11 @@ export default function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className={cn(
-            "p-4 rounded-lg bg-gradient-to-r from-yellow-500/20 to-orange-500/20",
-            "border border-yellow-500/30"
-          )}
+          className="p-4 rounded-lg bg-neutral-800/50 border border-neutral-700"
         >
           <div className="flex items-center space-x-2">
-            <Users className="text-yellow-400" size={16} />
-            <span className="text-yellow-300 text-sm">Customers</span>
+            <Users className="text-neutral-400" size={16} />
+            <span className="text-neutral-300 text-sm">Customers</span>
           </div>
           <div className="text-white text-2xl font-bold">{totalCustomers}</div>
         </motion.div>
@@ -193,14 +181,11 @@ export default function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className={cn(
-            "p-4 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20",
-            "border border-cyan-500/30"
-          )}
+          className="p-4 rounded-lg bg-neutral-800/50 border border-neutral-700"
         >
           <div className="flex items-center space-x-2">
-            <DollarSign className="text-cyan-400" size={16} />
-            <span className="text-cyan-300 text-sm">Revenue</span>
+            <DollarSign className="text-neutral-400" size={16} />
+            <span className="text-neutral-300 text-sm">Revenue</span>
           </div>
           <div className="text-white text-2xl font-bold">${totalRevenue.toFixed(0)}</div>
         </motion.div>

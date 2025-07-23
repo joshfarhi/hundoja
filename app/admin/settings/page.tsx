@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings, Mail, Save, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import DebugMode from '@/components/admin/DebugMode';
 
 interface EmailSetting {
   id: string;
@@ -238,6 +239,8 @@ export default function SettingsPage() {
             ⚠️ Note: You must have 2-Step Verification enabled on your Google account to generate app passwords.
           </p>
         </motion.div>
+        
+        <DebugMode />
       </motion.div>
     </div>
   );
