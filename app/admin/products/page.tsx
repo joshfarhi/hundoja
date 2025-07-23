@@ -7,18 +7,10 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
   Plus,
-  Search,
   Edit,
-  Trash2,
   Package,
-  ChevronDown,
-  AlertCircle,
-  CheckCircle,
   X,
   Tag,
-  UploadCloud,
-  Loader,
-  MoreVertical,
   Save
 } from 'lucide-react';
 
@@ -64,7 +56,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }: { isO
 };
 
 // Enhanced Product Modal
-const ProductModal = ({ product, categories, onClose, onSave }: { product: Product | null, categories: Category[], onClose: () => void, onSave: (data: any) => void }) => {
+const ProductModal = ({ product, categories, onClose, onSave }: { product: Product | null, categories: Category[], onClose: () => void, onSave: (data: Partial<Product>) => void }) => {
   const [isEditing, setIsEditing] = useState(!product); // Edit mode by default if it's a new product
   const [formData, setFormData] = useState(product || { name: '', sku: '', description: '', price: 0, stock_quantity: 0, category_id: '', images: [], is_active: true });
 
@@ -187,14 +179,14 @@ const ProductModal = ({ product, categories, onClose, onSave }: { product: Produ
 };
 
 // Category Modal
-const CategoryModal = ({ category, onClose, onSave }: { category: Category | null, onClose: () => void, onSave: (data: any) => void }) => {
+const CategoryModal = ({ category, onClose, onSave }: { category: Category | null, onClose: () => void, onSave: (data: Partial<Category>) => void }) => {
   const [isEditing, setIsEditing] = useState(!category);
   const [formData, setFormData] = useState(category || { name: '', slug: '', description: '', is_active: true });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
-    let finalValue: string | boolean = type === 'checkbox' ? checked : value;
+    const finalValue: string | boolean = type === 'checkbox' ? checked : value;
     if (name === 'name' && isEditing) {
       // Auto-generate slug from name
       const slug = (finalValue as string).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -331,7 +323,7 @@ export default function ProductsPage() {
     setIsProductModalOpen(true);
   };
   
-  const handleSaveProduct = async (productData: Product) => {
+  const handleSaveProduct = async (productData: Partial<Product>) => {
     const { id, ...updateData } = productData;
     const request = id 
       ? supabase.from('products').update(updateData).eq('id', id)
@@ -361,14 +353,12 @@ export default function ProductsPage() {
     setIsCategoryModalOpen(true);
   };
 
-  const handleSaveCategory = async (categoryData: Category) => {
-    const { id, ...updateData } = categoryData;
-    // Ensure products property is not sent on save
-    const { products, ...rest } = updateData as any;
+  const handleSaveCategory = async (categoryData: Partial<Category>) => {
+    const { id, products: _products, ...updateData } = categoryData;
 
     const request = id 
-      ? supabase.from('categories').update(rest).eq('id', id)
-      : supabase.from('categories').insert([rest]);
+      ? supabase.from('categories').update(updateData).eq('id', id)
+      : supabase.from('categories').insert([updateData]);
 
     await request;
     setIsCategoryModalOpen(false);

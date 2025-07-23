@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabase';
 import { useCart } from '@/contexts/CartContext';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { ShoppingCart, Eye, Filter, ArrowUpDown, ChevronDown } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import CartSidebar from '@/components/CartSidebar';
 import Footer from '@/components/Footer';
@@ -103,7 +102,7 @@ export default function ProductsPage() {
                   <p className="text-neutral-400 text-sm">{product.categories?.name}</p>
                   <div className="flex justify-between items-center mt-4">
                     <span className="text-white font-bold text-xl">${product.price}</span>
-                    <button onClick={() => addToCart(product)} className="bg-white text-black px-4 py-2 rounded-lg">Add to Cart</button>
+                    <button onClick={() => { setSortBy('price'); addToCart(product); }} className="bg-white text-black px-4 py-2 rounded-lg">Add to Cart</button>
                   </div>
                 </div>
               </motion.div>

@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, CheckCircle, XCircle, Loader, Server, Database, Mail, ShoppingCart, Users, TestTube, Power } from 'lucide-react';
+import { CheckCircle, XCircle, Loader, Server, Database, Mail, ShoppingCart, Users, TestTube, Power } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TestResult {

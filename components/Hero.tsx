@@ -24,11 +24,13 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <Image src="/Hundoja-2025-logo.webp" alt="Hundoja Logo" width={400} height={133} priority />
+          <div className="w-[280px] sm:w-[400px]">
+            <Image src="/Hundoja-2025-logo.webp" alt="Hundoja Logo" width={400} height={133} priority />
+          </div>
         </motion.div>
         
         <motion.p 
-          className="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto"
+          className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
