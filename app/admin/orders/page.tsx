@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAdmin } from '@/contexts/AdminContext';
+import { supabase } from '@/lib/supabase';
 import {
   Search,
   Download,
@@ -28,12 +29,114 @@ const statusConfig = {
   cancelled: { label: 'Cancelled', icon: XCircle, color: 'text-red-400 bg-red-500/20' },
 };
 
+interface RealOrder {
+  id: string;
+  order_number: string;
+  email: string;
+  status: string;
+  payment_status: string;
+  total_amount: number;
+  created_at: string;
+  customers?: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | null;
+  order_items: {
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+    total: number;
+    product_snapshot: Record<string, unknown>;
+  }[];
+}
+
 export default function OrdersPage() {
   const { state, dispatch, removeDemoItems } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [realOrders, setRealOrders] = useState<RealOrder[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredOrders = state.orders.filter(order => {
+  // Fetch real orders from database
+  useEffect(() => {
+    async function fetchOrders() {
+      try {
+        setLoading(true);
+        const { data: orders, error } = await supabase
+          .from('orders')
+          .select(`
+            id,
+            order_number,
+            email,
+            status,
+            payment_status,
+            total_amount,
+            created_at,
+            customers (
+              first_name,
+              last_name,
+              email
+            ),
+            order_items (
+              id,
+              name,
+              quantity,
+              price,
+              total,
+              product_snapshot
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        if (error) {
+          console.error('Error fetching orders:', error);
+        } else {
+          setRealOrders((orders || []) as unknown as RealOrder[]);
+        }
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchOrders();
+  }, []);
+
+  // Transform real orders to match existing interface
+  const transformedRealOrders = realOrders.map(order => ({
+    id: order.order_number,
+    customer: {
+      name: order.customers && Array.isArray(order.customers) && order.customers.length > 0
+        ? `${order.customers[0].first_name || ''} ${order.customers[0].last_name || ''}`.trim()
+        : order.customers && !Array.isArray(order.customers)
+        ? `${order.customers.first_name || ''} ${order.customers.last_name || ''}`.trim()
+        : 'Customer',
+      email: order.email,
+    },
+    products: order.order_items.map(item => ({
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+    })),
+    total: order.total_amount,
+    status: order.status,
+    paymentStatus: order.payment_status,
+    orderDate: order.created_at,
+    deliveryDate: undefined, // Add this field to match interface
+    isDemo: false,
+  }));
+
+  // Combine demo orders (if not hidden) with real orders
+  const allOrders = [
+    ...transformedRealOrders,
+    ...(state.demoItemsHidden ? [] : state.orders),
+  ];
+
+  const filteredOrders = allOrders.filter(order => {
     const matchesSearch = order.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
@@ -77,28 +180,28 @@ export default function OrdersPage() {
       </motion.div>
 
       {/* Demo Items Banner */}
-      {state.orders.some(o => o.isDemo) && (
+      {!state.demoItemsHidden && state.orders.some(o => o.isDemo) && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className={cn(
             "flex items-center justify-between p-4 rounded-lg",
-            "bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30"
+            "bg-neutral-800/50 border border-neutral-700"
           )}
         >
           <div className="flex items-center space-x-3">
-            <Sparkles className="text-purple-400" size={20} />
+            <Sparkles className="text-neutral-400" size={20} />
             <div>
               <h3 className="text-white font-medium">Demo Orders Active</h3>
-              <p className="text-purple-300 text-sm">These are example orders to help you get started</p>
+              <p className="text-neutral-400 text-sm">These are example orders to help you get started</p>
             </div>
           </div>
           <motion.button
             onClick={removeDemoItems}
             className={cn(
               "flex items-center space-x-2 px-4 py-2",
-              "bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg",
-              "hover:from-red-600 hover:to-pink-600 transition-all duration-200"
+              "bg-neutral-700 text-white rounded-lg",
+              "hover:bg-neutral-600 transition-all duration-200"
             )}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -179,8 +282,27 @@ export default function OrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredOrders.map((order, index) => {
-                const statusInfo = statusConfig[order.status];
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center">
+                    <div className="flex items-center justify-center space-x-3">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                      <span className="text-neutral-400">Loading orders...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center">
+                    <div className="text-neutral-400">
+                      <Package className="w-12 h-12 mx-auto mb-4 text-neutral-600" />
+                      <p>No orders found</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((order, index) => {
+                const statusInfo = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.pending;
                 const StatusIcon = statusInfo.icon;
                 
                 return (
@@ -282,18 +404,11 @@ export default function OrdersPage() {
                     </td>
                   </motion.tr>
                 );
-              })}
+              })
+              )}
             </tbody>
           </table>
         </div>
-
-        {filteredOrders.length === 0 && (
-          <div className="text-center py-12">
-            <Package className="mx-auto text-neutral-600 mb-4" size={48} />
-            <p className="text-neutral-400 text-lg">No orders found</p>
-            <p className="text-neutral-500 text-sm">Try adjusting your search or filters</p>
-          </div>
-        )}
       </motion.div>
     </div>
   );

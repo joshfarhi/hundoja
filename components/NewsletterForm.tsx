@@ -150,7 +150,7 @@ export default function NewsletterForm({ variant = 'footer', className }: Newsle
 
       {!isHero && (
         <p className="text-xs text-gray-400 mt-2 text-center">
-          Join 1,000+ fashion enthusiasts. Unsubscribe anytime.
+          Join our community for exclusive updates on upcoming fashion releases and style insights—unsubscribe anytime.
         </p>
       )}
     </div>

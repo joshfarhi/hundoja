@@ -4,12 +4,14 @@ import React, { useState } from 'react';
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { useCart } from '@/contexts/CartContext';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 
 export default function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
   const { state, dispatch } = useCart();
   const router = useRouter();
+  const { user } = useUser();
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export default function CheckoutForm() {
         throw new Error('Failed to create payment intent');
       }
 
-      const { clientSecret } = await response.json();
+      const { clientSecret, paymentIntentId } = await response.json();
 
       // Confirm payment
       const { error } = await stripe.confirmPayment({
@@ -55,6 +57,49 @@ export default function CheckoutForm() {
       if (error) {
         setError(error.message || 'An error occurred during payment');
       } else {
+        // Create order in database after successful payment
+        try {
+          const orderData = {
+            items: state.items,
+            total: state.total,
+            subtotal: state.total, // You can calculate tax/shipping separately if needed
+            billing_address: {
+              name: user?.fullName || 'Customer',
+              email: user?.primaryEmailAddress?.emailAddress || 'customer@example.com',
+              line1: '123 Main St', // This should come from a form
+              city: 'City',
+              state: 'State', 
+              postal_code: '12345',
+              country: 'US',
+            },
+            shipping_address: {
+              name: user?.fullName || 'Customer',
+              email: user?.primaryEmailAddress?.emailAddress || 'customer@example.com',
+              line1: '123 Main St', // This should come from a form
+              city: 'City',
+              state: 'State',
+              postal_code: '12345', 
+              country: 'US',
+            },
+            stripe_payment_intent_id: paymentIntentId,
+          };
+
+          const orderResponse = await fetch('/api/orders/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData),
+          });
+
+          if (!orderResponse.ok) {
+            console.error('Failed to create order record');
+          } else {
+            const orderResult = await orderResponse.json();
+            console.log('Order created:', orderResult.order_number);
+          }
+        } catch (orderError) {
+          console.error('Error creating order:', orderError);
+        }
+
         // Clear cart on successful payment
         dispatch({ type: 'CLEAR_CART' });
         router.push('/checkout/success');

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { useUser } from '@clerk/nextjs';
 import { supabase } from '@/lib/supabase';
 
 // Types
@@ -66,6 +67,7 @@ interface AdminState {
   contacts: Contact[];
   loading: boolean;
   error: string | null;
+  demoItemsHidden: boolean;
 }
 
 type AdminAction = 
@@ -83,7 +85,8 @@ type AdminAction =
   | { type: 'ADD_CONTACT'; payload: Contact }
   | { type: 'UPDATE_CONTACT'; payload: Contact }
   | { type: 'DELETE_CONTACT'; payload: string }
-  | { type: 'REMOVE_DEMO_ITEMS' };
+  | { type: 'REMOVE_DEMO_ITEMS' }
+  | { type: 'SET_DEMO_ITEMS_HIDDEN'; payload: boolean };
 
 // Demo data
 const demoProducts: Product[] = [
@@ -209,13 +212,26 @@ const demoContacts: Contact[] = [
   },
 ];
 
-const initialState: AdminState = {
-  products: demoProducts,
-  orders: demoOrders,
-  contacts: demoContacts,
-  loading: false,
-  error: null,
+// Initial state will be loaded from database in useEffect
+const getInitialDemoItemsHidden = (): boolean => {
+  // Start with false, will be updated from database
+  return false;
 };
+
+const createInitialState = (): AdminState => {
+  const demoItemsHidden = getInitialDemoItemsHidden();
+  
+  return {
+    products: demoItemsHidden ? [] : demoProducts,
+    orders: demoItemsHidden ? [] : demoOrders,
+    contacts: demoItemsHidden ? [] : demoContacts,
+    loading: false,
+    error: null,
+    demoItemsHidden,
+  };
+};
+
+const initialState: AdminState = createInitialState();
 
 function adminReducer(state: AdminState, action: AdminAction): AdminState {
   switch (action.type) {
@@ -271,6 +287,12 @@ function adminReducer(state: AdminState, action: AdminAction): AdminState {
         products: state.products.filter(p => !p.isDemo),
         orders: state.orders.filter(o => !o.isDemo),
         contacts: state.contacts.filter(c => !c.isDemo),
+        demoItemsHidden: true,
+      };
+    case 'SET_DEMO_ITEMS_HIDDEN':
+      return {
+        ...state,
+        demoItemsHidden: action.payload,
       };
     default:
       return state;
@@ -280,14 +302,17 @@ function adminReducer(state: AdminState, action: AdminAction): AdminState {
 interface AdminContextType {
   state: AdminState;
   dispatch: React.Dispatch<AdminAction>;
-  removeDemoItems: () => void;
+  removeDemoItems: () => Promise<void>;
   refreshData: () => Promise<void>;
+  resetDemoItemsPreference: () => Promise<void>;
+  loadUserPreferences: () => Promise<void>;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(adminReducer, initialState);
+  const { user } = useUser();
 
   // Real-time subscriptions
   useEffect(() => {
@@ -361,8 +386,93 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const removeDemoItems = () => {
+  const removeDemoItems = async () => {
     dispatch({ type: 'REMOVE_DEMO_ITEMS' });
+    
+    // Persist the preference in database
+    try {
+      const response = await fetch('/api/admin/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ demo_items_hidden: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save preference');
+      }
+    } catch (error) {
+      console.warn('Failed to save demo items preference:', error);
+      // Fallback to localStorage for offline support
+      try {
+        localStorage.setItem('hundoja_demo_items_hidden', 'true');
+      } catch (localStorageError) {
+        console.warn('Failed to save to localStorage:', localStorageError);
+      }
+    }
+  };
+
+  const resetDemoItemsPreference = async () => {
+    try {
+      // Reset preference in database
+      const response = await fetch('/api/admin/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ demo_items_hidden: false }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reset preference');
+      }
+
+      dispatch({ type: 'SET_DEMO_ITEMS_HIDDEN', payload: false });
+      // Re-add demo items
+      dispatch({ type: 'SET_PRODUCTS', payload: [...state.products.filter(p => !p.isDemo), ...demoProducts] });
+      dispatch({ type: 'SET_ORDERS', payload: [...state.orders.filter(o => !o.isDemo), ...demoOrders] });
+      dispatch({ type: 'SET_CONTACTS', payload: [...state.contacts.filter(c => !c.isDemo), ...demoContacts] });
+    } catch (error) {
+      console.warn('Failed to reset demo items preference:', error);
+      // Fallback to localStorage
+      try {
+        localStorage.removeItem('hundoja_demo_items_hidden');
+      } catch (localStorageError) {
+        console.warn('Failed to remove from localStorage:', localStorageError);
+      }
+    }
+  };
+
+  const loadUserPreferences = async () => {
+    try {
+      const response = await fetch('/api/admin/preferences');
+      
+      if (!response.ok) {
+        throw new Error('Failed to load preferences');
+      }
+
+      const { preferences } = await response.json();
+      
+      dispatch({ type: 'SET_DEMO_ITEMS_HIDDEN', payload: preferences.demo_items_hidden });
+      
+      // If demo items should be hidden, remove them from state
+      if (preferences.demo_items_hidden) {
+        dispatch({ type: 'REMOVE_DEMO_ITEMS' });
+      }
+    } catch (error) {
+      console.warn('Failed to load user preferences:', error);
+      // Fallback to localStorage
+      try {
+        const stored = localStorage.getItem('hundoja_demo_items_hidden');
+        if (stored === 'true') {
+          dispatch({ type: 'SET_DEMO_ITEMS_HIDDEN', payload: true });
+          dispatch({ type: 'REMOVE_DEMO_ITEMS' });
+        }
+      } catch (localStorageError) {
+        console.warn('Failed to load from localStorage:', localStorageError);
+      }
+    }
   };
 
   const refreshData = async () => {
@@ -394,8 +504,22 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Load user preferences when user is available
+  useEffect(() => {
+    if (user?.id) {
+      loadUserPreferences();
+    }
+  }, [user?.id]); // Run when user ID changes
+
   return (
-    <AdminContext.Provider value={{ state, dispatch, removeDemoItems, refreshData }}>
+    <AdminContext.Provider value={{ 
+      state, 
+      dispatch, 
+      removeDemoItems, 
+      refreshData, 
+      resetDemoItemsPreference, 
+      loadUserPreferences 
+    }}>
       {children}
     </AdminContext.Provider>
   );

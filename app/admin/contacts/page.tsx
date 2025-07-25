@@ -124,28 +124,28 @@ export default function ContactsPage() {
       </motion.div>
 
       {/* Demo Items Banner */}
-      {state.contacts.some(c => c.isDemo) && (
+      {!state.demoItemsHidden && state.contacts.some(c => c.isDemo) && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className={cn(
             "flex items-center justify-between p-4 rounded-lg",
-            "bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30"
+            "bg-neutral-800/50 border border-neutral-700"
           )}
         >
           <div className="flex items-center space-x-3">
-            <Sparkles className="text-purple-400" size={20} />
+            <Sparkles className="text-neutral-400" size={20} />
             <div>
               <h3 className="text-white font-medium">Demo Contacts Active</h3>
-              <p className="text-purple-300 text-sm">These are example contact requests to help you get started</p>
+              <p className="text-neutral-400 text-sm">These are example contact requests to help you get started</p>
             </div>
           </div>
           <motion.button
             onClick={removeDemoItems}
             className={cn(
               "flex items-center space-x-2 px-4 py-2",
-              "bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg",
-              "hover:from-red-600 hover:to-pink-600 transition-all duration-200"
+              "bg-neutral-700 text-white rounded-lg",
+              "hover:bg-neutral-600 transition-all duration-200"
             )}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

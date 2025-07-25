@@ -58,9 +58,11 @@ export default function AdminDashboard() {
 
   // Get recent orders (first 4)
   const recentOrders = state.orders.slice(0, 4);
-  const hasAnyDemoItems = state.products.some(p => p.isDemo) || 
-                         state.orders.some(o => o.isDemo) || 
-                         state.contacts.some(c => c.isDemo);
+  const hasAnyDemoItems = !state.demoItemsHidden && (
+    state.products.some(p => p.isDemo) || 
+    state.orders.some(o => o.isDemo) || 
+    state.contacts.some(c => c.isDemo)
+  );
 
   return (
     <div className="space-y-6">
@@ -94,14 +96,14 @@ export default function AdminDashboard() {
           animate={{ opacity: 1, y: 0 }}
           className={cn(
             "flex items-center justify-between p-4 rounded-lg",
-            "bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30"
+            "bg-neutral-800/50 border border-neutral-700"
           )}
         >
           <div className="flex items-center space-x-3">
-            <Sparkles className="text-purple-400" size={20} />
+            <Sparkles className="text-neutral-400" size={20} />
             <div className="flex-1">
               <h3 className="text-white font-medium">Demo Data Active</h3>
-              <p className="text-purple-300 text-sm leading-tight mt-1">
+              <p className="text-neutral-400 text-sm leading-tight mt-1">
                 You have {state.products.filter(p => p.isDemo).length} demo products, {' '}
                 {state.orders.filter(o => o.isDemo).length} demo orders, and {' '}
                 {state.contacts.filter(c => c.isDemo).length} demo contacts
@@ -112,8 +114,8 @@ export default function AdminDashboard() {
             onClick={removeDemoItems}
             className={cn(
               "flex items-center space-x-2 px-3 py-2 sm:px-4",
-              "bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg",
-              "hover:from-red-600 hover:to-pink-600 transition-all duration-200 text-xs sm:text-sm"
+              "bg-neutral-700 text-white rounded-lg",
+              "hover:bg-neutral-600 transition-all duration-200 text-xs sm:text-sm"
             )}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
