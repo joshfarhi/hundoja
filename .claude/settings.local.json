@@ -17,7 +17,8 @@
       "Bash(mkdir:*)",
       "Bash(mv:*)",
       "Bash(find:*)",
-      "WebFetch(domain:docs.stripe.com)"
+      "WebFetch(domain:docs.stripe.com)",
+      "Bash(lsof:*)"
     ],
     "deny": []
   }

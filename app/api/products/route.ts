@@ -1,0 +1,239 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
+import { z } from 'zod';
+
+// Validation schema
+const ProductSearchSchema = z.object({
+  page: z.string().optional().transform(val => parseInt(val || '1')),
+  limit: z.string().optional().transform(val => Math.min(parseInt(val || '20'), 100)), // Max 100 items
+  search: z.string().optional(),
+  category: z.string().optional(),
+  minPrice: z.string().optional().transform(val => val ? parseFloat(val) : undefined),
+  maxPrice: z.string().optional().transform(val => val ? parseFloat(val) : undefined),
+  inStock: z.string().optional().transform(val => val === 'true'),
+  sortBy: z.enum(['relevance', 'newest', 'price_asc', 'price_desc', 'name_asc', 'name_desc', 'stock']).optional().default('newest'),
+});
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    
+    // Validate query parameters
+    const validatedParams = ProductSearchSchema.parse({
+      page: searchParams.get('page'),
+      limit: searchParams.get('limit'),
+      search: searchParams.get('search'),
+      category: searchParams.get('category'),
+      minPrice: searchParams.get('minPrice'),
+      maxPrice: searchParams.get('maxPrice'),
+      inStock: searchParams.get('inStock'),
+      sortBy: searchParams.get('sortBy'),
+    });
+
+    const {
+      page,
+      limit,
+      search,
+      category,
+      minPrice,
+      maxPrice,
+      inStock,
+      sortBy
+    } = validatedParams;
+
+    // Use advanced search function if search query is provided
+    if (search && search.trim()) {
+      const { data: searchResults, error } = await supabase
+        .rpc('search_products_advanced', {
+          search_query: search.trim(),
+          category_filter: category || null,
+          min_price: minPrice || null,
+          max_price: maxPrice || null,
+          in_stock_only: inStock || false,
+          sort_by: sortBy,
+          limit_count: limit,
+          offset_count: (page - 1) * limit
+        });
+
+      if (error) {
+        console.error('Search error:', error);
+        return NextResponse.json({ error: 'Search failed' }, { status: 500 });
+      }
+
+      // Get total count for pagination
+      const { count } = await supabase
+        .rpc('search_products_advanced', {
+          search_query: search.trim(),
+          category_filter: category || null,
+          min_price: minPrice || null,
+          max_price: maxPrice || null,
+          in_stock_only: inStock || false,
+          sort_by: sortBy,
+          limit_count: 1000, // Large number to get total
+          offset_count: 0
+        })
+        .select('*', { count: 'exact', head: true });
+
+      // Log search query for analytics
+      await supabase.rpc('log_search_query', {
+        search_query: search.trim(),
+        result_count: searchResults?.length || 0,
+        user_agent: request.headers.get('user-agent'),
+        ip_addr: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip')
+      });
+
+      return NextResponse.json({
+        products: searchResults || [],
+        pagination: {
+          page,
+          limit,
+          total: count || 0,
+          pages: Math.ceil((count || 0) / limit),
+          hasMore: (page * limit) < (count || 0)
+        },
+        searchQuery: search.trim(),
+        filters: {
+          category,
+          minPrice,
+          maxPrice,
+          inStock,
+          sortBy
+        }
+      });
+    }
+
+    // Regular product listing without search
+    let query = supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        description,
+        sku,
+        price,
+        stock_quantity,
+        images,
+        is_active,
+        created_at,
+        categories (
+          id,
+          name,
+          slug
+        )
+      `, { count: 'exact' })
+      .eq('is_active', true);
+
+    // Apply filters
+    if (category) {
+      query = query.eq('categories.slug', category);
+    }
+
+    if (minPrice !== undefined) {
+      query = query.gte('price', minPrice);
+    }
+
+    if (maxPrice !== undefined) {
+      query = query.lte('price', maxPrice);
+    }
+
+    if (inStock) {
+      query = query.gt('stock_quantity', 0);
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'price_asc':
+        query = query.order('price', { ascending: true });
+        break;
+      case 'price_desc':
+        query = query.order('price', { ascending: false });
+        break;
+      case 'name_asc':
+        query = query.order('name', { ascending: true });
+        break;
+      case 'name_desc':
+        query = query.order('name', { ascending: false });
+        break;
+      case 'stock':
+        query = query.order('stock_quantity', { ascending: false });
+        break;
+      case 'newest':
+      default:
+        query = query.order('created_at', { ascending: false });
+        break;
+    }
+
+    // Apply pagination
+    query = query.range((page - 1) * limit, page * limit - 1);
+
+    const { data: products, error, count } = await query;
+
+    if (error) {
+      console.error('Database error:', error);
+      return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      products: products || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit),
+        hasMore: (page * limit) < (count || 0)
+      },
+      filters: {
+        category,
+        minPrice,
+        maxPrice,
+        inStock,
+        sortBy
+      }
+    });
+
+  } catch (error) {
+    console.error('API error:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid parameters', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// GET product suggestions for search autocomplete
+export async function POST(request: NextRequest) {
+  try {
+    const { query } = await request.json();
+
+    if (!query || query.trim().length < 2) {
+      return NextResponse.json({ suggestions: [] });
+    }
+
+    const { data: suggestions, error } = await supabase
+      .rpc('get_search_suggestions', {
+        partial_query: query.trim(),
+        suggestion_limit: 8
+      });
+
+    if (error) {
+      console.error('Suggestions error:', error);
+      return NextResponse.json({ suggestions: [] });
+    }
+
+    return NextResponse.json({
+      suggestions: suggestions || []
+    });
+
+  } catch (error) {
+    console.error('Suggestions API error:', error);
+    return NextResponse.json({ suggestions: [] });
+  }
+}
