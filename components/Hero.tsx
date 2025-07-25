@@ -10,9 +10,10 @@ export default function Hero() {
   return (
     <section className="relative h-screen flex items-center justify-center overflow-hidden">
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat grayscale"
+        className="absolute inset-0 bg-cover bg-no-repeat grayscale"
         style={{
           backgroundImage: 'url(/hundoja-hero.jpg)',
+          backgroundPosition: 'left 20% top 30%',
         }}
       />
       <div className="absolute inset-0 bg-black/60" />
