@@ -71,7 +71,7 @@ export default function ProductGrid({ initialProducts, categories }: ProductGrid
 
   // Advanced filtering and sorting
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = products.filter(product => {
+    const filtered = products.filter(product => {
       // Category filter
       const categoryMatch = selectedCategory === 'all' || product.categories?.slug === selectedCategory;
       

@@ -18,7 +18,9 @@
       "Bash(mv:*)",
       "Bash(find:*)",
       "WebFetch(domain:docs.stripe.com)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(npm audit:*)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

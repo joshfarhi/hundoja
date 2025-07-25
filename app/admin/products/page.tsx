@@ -354,7 +354,9 @@ export default function ProductsPage() {
   };
 
   const handleSaveCategory = async (categoryData: Partial<Category>) => {
-    const { id, products: _products, ...updateData } = categoryData;
+    const { id, ...updateData } = categoryData;
+    // Remove products field as it's not needed for update
+    delete updateData.products;
 
     const request = id 
       ? supabase.from('categories').update(updateData).eq('id', id)

@@ -52,16 +52,18 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       return;
     }
 
-    dispatch({
-      type: 'ADD_ITEM',
-      payload: {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.images[0] || '/placeholder-product.jpg',
-        quantity: quantity,
-      },
-    });
+    // Add item to cart (quantity is handled by the reducer)
+    for (let i = 0; i < quantity; i++) {
+      dispatch({
+        type: 'ADD_ITEM',
+        payload: {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.images[0] || '/placeholder-product.jpg',
+        },
+      });
+    }
 
     // Show success message or animation
     alert(`Added ${quantity} ${product.name}(s) to cart!`);

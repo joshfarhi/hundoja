@@ -63,8 +63,16 @@ async function getProductsData() {
     return { products: [], categories: [] };
   }
 
+  // Transform products to ensure categories is a single object
+  const transformedProducts = products?.map(product => ({
+    ...product,
+    categories: Array.isArray(product.categories) 
+      ? product.categories[0] 
+      : product.categories || { id: '', name: 'Uncategorized', slug: 'uncategorized' }
+  })) || [];
+
   return { 
-    products: products as Product[] || [], 
+    products: transformedProducts as Product[], 
     categories: categories as Category[] || [] 
   };
 }

@@ -41,68 +41,7 @@ export async function GET(request: NextRequest) {
       sortBy
     } = validatedParams;
 
-    // Use advanced search function if search query is provided
-    if (search && search.trim()) {
-      const { data: searchResults, error } = await supabase
-        .rpc('search_products_advanced', {
-          search_query: search.trim(),
-          category_filter: category || null,
-          min_price: minPrice || null,
-          max_price: maxPrice || null,
-          in_stock_only: inStock || false,
-          sort_by: sortBy,
-          limit_count: limit,
-          offset_count: (page - 1) * limit
-        });
-
-      if (error) {
-        console.error('Search error:', error);
-        return NextResponse.json({ error: 'Search failed' }, { status: 500 });
-      }
-
-      // Get total count for pagination
-      const { count } = await supabase
-        .rpc('search_products_advanced', {
-          search_query: search.trim(),
-          category_filter: category || null,
-          min_price: minPrice || null,
-          max_price: maxPrice || null,
-          in_stock_only: inStock || false,
-          sort_by: sortBy,
-          limit_count: 1000, // Large number to get total
-          offset_count: 0
-        })
-        .select('*', { count: 'exact', head: true });
-
-      // Log search query for analytics
-      await supabase.rpc('log_search_query', {
-        search_query: search.trim(),
-        result_count: searchResults?.length || 0,
-        user_agent: request.headers.get('user-agent'),
-        ip_addr: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip')
-      });
-
-      return NextResponse.json({
-        products: searchResults || [],
-        pagination: {
-          page,
-          limit,
-          total: count || 0,
-          pages: Math.ceil((count || 0) / limit),
-          hasMore: (page * limit) < (count || 0)
-        },
-        searchQuery: search.trim(),
-        filters: {
-          category,
-          minPrice,
-          maxPrice,
-          inStock,
-          sortBy
-        }
-      });
-    }
-
-    // Regular product listing without search
+    // Build query with all filters including search
     let query = supabase
       .from('products')
       .select(`
@@ -122,6 +61,11 @@ export async function GET(request: NextRequest) {
         )
       `, { count: 'exact' })
       .eq('is_active', true);
+
+    // Apply search filter if provided
+    if (search && search.trim()) {
+      query = query.or(`name.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%,sku.ilike.%${search.trim()}%`);
+    }
 
     // Apply filters
     if (category) {
@@ -182,6 +126,7 @@ export async function GET(request: NextRequest) {
         pages: Math.ceil((count || 0) / limit),
         hasMore: (page * limit) < (count || 0)
       },
+      searchQuery: search?.trim() || null,
       filters: {
         category,
         minPrice,
@@ -196,7 +141,7 @@ export async function GET(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid parameters', details: error.errors },
+        { error: 'Invalid parameters', details: error.issues },
         { status: 400 }
       );
     }

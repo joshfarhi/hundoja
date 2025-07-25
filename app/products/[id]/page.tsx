@@ -1,5 +1,4 @@
 import React from 'react';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import CartSidebar from '@/components/CartSidebar';
@@ -41,7 +40,7 @@ async function getProduct(id: string): Promise<Product | null> {
       images,
       is_active,
       created_at,
-      categories (
+      categories!inner (
         id,
         name,
         slug
@@ -55,7 +54,15 @@ async function getProduct(id: string): Promise<Product | null> {
     return null;
   }
 
-  return product as Product;
+  // Transform the categories array to single object since products have one category
+  const transformedProduct = {
+    ...product,
+    categories: Array.isArray(product.categories) 
+      ? product.categories[0] 
+      : product.categories || { id: '', name: 'Uncategorized', slug: 'uncategorized' }
+  };
+
+  return transformedProduct as Product;
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
