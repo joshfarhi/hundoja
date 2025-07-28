@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -16,42 +16,121 @@ import {
   Mail,
   X,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react';
+
+interface AnalyticsData {
+  currentMonth: {
+    revenue: number;
+    orders: number;
+    customers: number;
+    products: number;
+  };
+  previousMonth: {
+    revenue: number;
+    orders: number;
+    customers: number;
+    products: number;
+  };
+  growth: {
+    revenue: {
+      percentage: number;
+      isPositive: boolean;
+      trend: number;
+    };
+    orders: {
+      percentage: number;
+      isPositive: boolean;
+      trend: number;
+    };
+    customers: {
+      percentage: number;
+      isPositive: boolean;
+    };
+    products: {
+      percentage: number;
+      isPositive: boolean;
+    };
+  };
+  totals: {
+    revenue: number;
+    orders: number;
+    customers: number;
+    products: number;
+  };
+}
 
 export default function AdminDashboard() {
   const { state, removeDemoItems } = useAdmin();
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  // Calculate real-time stats
+  // Fetch analytics data
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/admin/analytics');
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics data');
+      }
+      
+      const data = await response.json();
+      setAnalyticsData(data);
+    } catch (err) {
+      console.error('Error fetching analytics:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load analytics');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  // Calculate real-time stats from local state (fallback)
   const totalRevenue = state.orders.reduce((sum, order) => sum + order.total, 0);
   const totalCustomers = new Set(state.orders.map(order => order.customer.email)).size;
   
+  // Use analytics data if available, otherwise fall back to local calculations
   const stats = [
     {
       title: 'Total Revenue',
-      value: `$${totalRevenue.toFixed(2)}`,
-      change: '+12.5%',
-      isPositive: true,
+      value: analyticsData ? `$${analyticsData.totals.revenue.toFixed(2)}` : `$${totalRevenue.toFixed(2)}`,
+      change: analyticsData ? 
+        `${analyticsData.growth.revenue.isPositive ? '+' : ''}${analyticsData.growth.revenue.percentage.toFixed(1)}%` :
+        '0%',
+      isPositive: analyticsData ? analyticsData.growth.revenue.isPositive : false,
       icon: DollarSign,
     },
     {
       title: 'Orders',
-      value: state.orders.length.toString(),
-      change: '+8.2%',
-      isPositive: true,
+      value: analyticsData ? analyticsData.totals.orders.toString() : state.orders.length.toString(),
+      change: analyticsData ? 
+        `${analyticsData.growth.orders.isPositive ? '+' : ''}${analyticsData.growth.orders.percentage.toFixed(1)}%` :
+        '0%',
+      isPositive: analyticsData ? analyticsData.growth.orders.isPositive : false,
       icon: ShoppingBag,
     },
     {
       title: 'Customers',
-      value: totalCustomers.toString(),
-      change: '+3.1%',
-      isPositive: true,
+      value: analyticsData ? analyticsData.totals.customers.toString() : totalCustomers.toString(),
+      change: analyticsData ? 
+        `${analyticsData.growth.customers.isPositive ? '+' : ''}${analyticsData.growth.customers.percentage.toFixed(1)}%` :
+        '0%',
+      isPositive: analyticsData ? analyticsData.growth.customers.isPositive : false,
       icon: Users,
     },
     {
       title: 'Products',
-      value: state.products.length.toString(),
-      change: '+5.7%',
-      isPositive: true,
+      value: analyticsData ? analyticsData.totals.products.toString() : state.products.length.toString(),
+      change: analyticsData ? 
+        `${analyticsData.growth.products.isPositive ? '+' : ''}${analyticsData.growth.products.percentage.toFixed(1)}%` :
+        '0%',
+      isPositive: analyticsData ? analyticsData.growth.products.isPositive : false,
       icon: Package,
     },
   ];
@@ -76,18 +155,59 @@ export default function AdminDashboard() {
           <h1 className="text-2xl sm:text-3xl font-bold text-white">Dashboard Overview</h1>
           <p className="text-neutral-400 mt-1 text-sm sm:text-base">Welcome back! Here&apos;s what&apos;s happening with your store.</p>
         </div>
-        <motion.button
-          className={cn(
-            "px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500",
-            "text-white rounded-lg hover:from-cyan-600 hover:to-blue-600",
-            "transition-all duration-200 text-sm sm:text-base"
-          )}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          Generate Report
-        </motion.button>
+        <div className="flex items-center space-x-3">
+          <motion.button
+            onClick={fetchAnalytics}
+            disabled={loading}
+            className={cn(
+              "flex items-center space-x-2 px-4 py-2",
+              "bg-neutral-800 text-white rounded-lg",
+              "hover:bg-neutral-700 transition-all duration-200 text-sm",
+              loading && "opacity-50 cursor-not-allowed"
+            )}
+            whileHover={{ scale: loading ? 1 : 1.02 }}
+            whileTap={{ scale: loading ? 1 : 0.98 }}
+          >
+            <RefreshCw className={cn("size-4", loading && "animate-spin")} />
+            <span>Refresh</span>
+          </motion.button>
+          <motion.button
+            className={cn(
+              "px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500",
+              "text-white rounded-lg hover:from-cyan-600 hover:to-blue-600",
+              "transition-all duration-200 text-sm sm:text-base"
+            )}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Generate Report
+          </motion.button>
+        </div>
       </motion.div>
+
+      {/* Error Message */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "flex items-center justify-between p-4 rounded-lg",
+            "bg-red-500/10 border border-red-500/20"
+          )}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="text-red-400 text-sm">
+              <strong>Error:</strong> {error}
+            </div>
+          </div>
+          <button
+            onClick={fetchAnalytics}
+            className="text-red-400 hover:text-red-300 text-sm underline"
+          >
+            Retry
+          </button>
+        </motion.div>
+      )}
 
       {/* Demo Items Banner */}
       {hasAnyDemoItems && (
@@ -137,7 +257,9 @@ export default function AdminDashboard() {
             <Package className="text-neutral-400" size={16} />
             <span className="text-neutral-300 text-sm">Products</span>
           </div>
-          <div className="text-white text-2xl font-bold">{state.products.length}</div>
+          <div className="text-white text-2xl font-bold">
+            {loading ? '...' : (analyticsData ? analyticsData.totals.products : state.products.length)}
+          </div>
         </motion.div>
 
         <motion.div
@@ -150,7 +272,9 @@ export default function AdminDashboard() {
             <ShoppingBag className="text-neutral-400" size={16} />
             <span className="text-neutral-300 text-sm">Orders</span>
           </div>
-          <div className="text-white text-2xl font-bold">{state.orders.length}</div>
+          <div className="text-white text-2xl font-bold">
+            {loading ? '...' : (analyticsData ? analyticsData.totals.orders : state.orders.length)}
+          </div>
         </motion.div>
 
         <motion.div
@@ -176,7 +300,9 @@ export default function AdminDashboard() {
             <Users className="text-neutral-400" size={16} />
             <span className="text-neutral-300 text-sm">Customers</span>
           </div>
-          <div className="text-white text-2xl font-bold">{totalCustomers}</div>
+          <div className="text-white text-2xl font-bold">
+            {loading ? '...' : (analyticsData ? analyticsData.totals.customers : totalCustomers)}
+          </div>
         </motion.div>
 
         <motion.div
@@ -189,7 +315,9 @@ export default function AdminDashboard() {
             <DollarSign className="text-neutral-400" size={16} />
             <span className="text-neutral-300 text-sm">Revenue</span>
           </div>
-          <div className="text-white text-2xl font-bold">${totalRevenue.toFixed(0)}</div>
+          <div className="text-white text-2xl font-bold">
+            {loading ? '...' : `$${analyticsData ? analyticsData.totals.revenue.toFixed(0) : totalRevenue.toFixed(0)}`}
+          </div>
         </motion.div>
       </div>
 
@@ -212,7 +340,9 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-neutral-400 text-sm font-medium">{stat.title}</p>
-                  <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
+                  <p className="text-2xl font-bold text-white mt-1">
+                    {loading ? '...' : stat.value}
+                  </p>
                 </div>
                 <div className={cn(
                   "p-3 rounded-lg",
@@ -222,18 +352,24 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div className="flex items-center mt-4">
-                {stat.isPositive ? (
-                  <TrendingUp className="text-green-400" size={16} />
+                {loading ? (
+                  <div className="text-neutral-400 text-sm">Loading...</div>
                 ) : (
-                  <TrendingDown className="text-red-400" size={16} />
+                  <>
+                    {stat.isPositive ? (
+                      <TrendingUp className="text-green-400" size={16} />
+                    ) : (
+                      <TrendingDown className="text-red-400" size={16} />
+                    )}
+                    <span className={cn(
+                      "text-sm font-medium ml-1",
+                      stat.isPositive ? "text-green-400" : "text-red-400"
+                    )}>
+                      {stat.change}
+                    </span>
+                    <span className="text-neutral-400 text-sm ml-1">vs last month</span>
+                  </>
                 )}
-                <span className={cn(
-                  "text-sm font-medium ml-1",
-                  stat.isPositive ? "text-green-400" : "text-red-400"
-                )}>
-                  {stat.change}
-                </span>
-                <span className="text-neutral-400 text-sm ml-1">vs last month</span>
               </div>
             </motion.div>
           );
