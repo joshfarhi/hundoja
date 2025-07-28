@@ -482,7 +482,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const [productsResponse, ordersResponse, contactsResponse] = await Promise.all([
         supabase.from('products').select('*'),
         supabase.from('orders').select('*'),
-        supabase.from('contact_requests').select('*'),
+        fetch('/api/admin/contacts').then(res => res.json()).catch(() => ({ contacts: [] }))
       ]);
 
       if (productsResponse.data) {
@@ -493,8 +493,26 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_ORDERS', payload: [...state.orders.filter(o => o.isDemo), ...ordersResponse.data] });
       }
       
-      if (contactsResponse.data) {
-        dispatch({ type: 'SET_CONTACTS', payload: [...state.contacts.filter(c => c.isDemo), ...contactsResponse.data] });
+      if (contactsResponse.contacts) {
+        // Transform database contact format to match our interface
+        const transformedContacts = contactsResponse.contacts.map((contact: any) => ({
+          id: contact.id,
+          name: contact.name,
+          email: contact.email,
+          phone: contact.phone,
+          subject: contact.subject,
+          message: contact.message,
+          status: contact.status,
+          priority: contact.priority,
+          category: contact.category,
+          createdAt: contact.created_at,
+          updatedAt: contact.updated_at,
+          submittedAt: contact.created_at, // Use created_at as submitted_at
+          respondedAt: contact.resolved_at,
+          tags: contact.tags || [],
+          isDemo: false
+        }));
+        dispatch({ type: 'SET_CONTACTS', payload: [...state.contacts.filter(c => c.isDemo), ...transformedContacts] });
       }
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to refresh data' });
