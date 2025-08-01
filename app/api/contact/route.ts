@@ -23,11 +23,11 @@ export async function POST(request: NextRequest) {
     // Generate a unique ticket number
     const ticketNumber = `TKT-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
     
-    // Get user agent and IP for tracking
-    const userAgent = request.headers.get('user-agent') || '';
-    const forwardedFor = request.headers.get('x-forwarded-for');
-    const realIp = request.headers.get('x-real-ip');
-    const ipAddress = forwardedFor?.split(',')[0] || realIp || 'unknown';
+    // Get user agent and IP for tracking (for future use)
+    // const userAgent = request.headers.get('user-agent') || '';
+    // const forwardedFor = request.headers.get('x-forwarded-for');
+    // const realIp = request.headers.get('x-real-ip');
+    // const ipAddress = forwardedFor?.split(',')[0] || realIp || 'unknown';
     
     // Insert contact request into database
     const { data: contactRequest, error } = await supabase

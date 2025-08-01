@@ -98,10 +98,10 @@ export default function CheckoutForm() {
           if (!orderResponse.ok) {
             // Order creation failed, but payment succeeded - handle silently
           } else {
-            const orderResult = await orderResponse.json();
             // Order created successfully
+            await orderResponse.json();
           }
-        } catch (orderError) {
+        } catch {
           // Handle order creation error silently - payment already succeeded
         }
 

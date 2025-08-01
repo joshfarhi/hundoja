@@ -4,18 +4,32 @@ import crypto from 'crypto';
 // Encryption key must be provided via environment variable
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 
-if (!ENCRYPTION_KEY) {
-  throw new Error('ENCRYPTION_KEY environment variable is required for email settings encryption');
+if (!ENCRYPTION_KEY && process.env.NODE_ENV !== 'test') {
+  // Only throw error in runtime, not during build
+  if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build') {
+    throw new Error('ENCRYPTION_KEY environment variable is required for email settings encryption');
+  }
 }
 
-// Generate a key from the environment variable
-const KEY = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+// Generate a key from the environment variable (only when needed)
+let KEY: Buffer | null = null;
 const IV_LENGTH = 16; // For AES, this is always 16
+
+function getKey(): Buffer {
+  if (!KEY && ENCRYPTION_KEY) {
+    KEY = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+  }
+  if (!KEY) {
+    throw new Error('ENCRYPTION_KEY environment variable is required for email settings encryption');
+  }
+  return KEY;
+}
 
 // Secure encryption/decryption functions
 function encrypt(text: string): string {
+  const key = getKey();
   const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv('aes-256-cbc', KEY, iv);
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return iv.toString('hex') + ':' + encrypted;
@@ -23,6 +37,7 @@ function encrypt(text: string): string {
 
 function decrypt(encryptedText: string): string {
   try {
+    const key = getKey();
     const textParts = encryptedText.split(':');
     if (textParts.length !== 2) {
       // Handle legacy encryption format
@@ -30,7 +45,7 @@ function decrypt(encryptedText: string): string {
     }
     const iv = Buffer.from(textParts[0], 'hex');
     const encrypted = textParts[1];
-    const decipher = crypto.createDecipheriv('aes-256-cbc', KEY, iv);
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return decrypted;

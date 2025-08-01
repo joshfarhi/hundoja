@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabase } from '@/lib/supabase';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const { userId } = await auth();
     
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
       .from('products')
       .select('id');
 
-    const { data: totalCustomers, error: totalCustomersError } = await supabase
+    const { error: totalCustomersError } = await supabase
       .from('customers')
       .select('id');
 
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
     const totalRevenue = totalOrders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
     const totalOrderCount = totalOrders?.length || 0;
     const totalProductCount = totalProducts?.length || 0;
-    const totalCustomerCount = totalCustomers?.length || 0;
+    // const totalCustomerCount = totalCustomers?.length || 0;
 
     // Calculate unique customers from orders
     const uniqueCustomers = new Set(totalOrders?.map(order => order.customer_id).filter(Boolean)).size;

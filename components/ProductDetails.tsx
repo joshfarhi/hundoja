@@ -89,7 +89,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
           text: product.description,
           url: window.location.href,
         });
-      } catch (err) {
+      } catch {
         // User cancelled sharing or error occurred - handle silently
       }
     } else {

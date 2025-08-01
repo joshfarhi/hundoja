@@ -4,9 +4,9 @@ import { supabase } from '@/lib/supabase';
 export async function GET() {
   try {
     // Test basic connection
-    const { data: testData, error: testError } = await supabase
+    const { count, error: testError } = await supabase
       .from('contact_requests')
-      .select('count(*)', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true });
 
     if (testError) {
       return NextResponse.json({
@@ -18,14 +18,20 @@ export async function GET() {
     }
 
     // Test table structure
-    const { data: tableInfo, error: tableError } = await supabase
-      .rpc('get_table_info', { table_name: 'contact_requests' })
-      .catch(() => ({ data: null, error: { message: 'RPC function not available' } }));
+    let tableInfo = null;
+    try {
+      const { data } = await supabase
+        .rpc('get_table_info', { table_name: 'contact_requests' });
+      tableInfo = data;
+    } catch {
+      // RPC function not available
+      tableInfo = null;
+    }
 
     return NextResponse.json({
       status: 'success',
       message: 'Database connection working',
-      contactRequestsCount: testData?.[0]?.count || 0,
+      contactRequestsCount: count || 0,
       tableInfo: tableInfo || 'Table structure check not available'
     });
 

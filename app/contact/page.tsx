@@ -73,7 +73,7 @@ export default function ContactPage() {
         setSubmitStatus('error');
         setErrorMessage(result.error || 'Failed to send message. Please try again.');
       }
-    } catch (error) {
+    } catch {
       setSubmitStatus('error');
       setErrorMessage('Network error. Please check your connection and try again.');
     } finally {
@@ -151,7 +151,7 @@ export default function ContactPage() {
                     <CheckCircle className="text-green-400" size={20} />
                     <span className="text-green-400 font-medium">Message sent successfully!</span>
                   </div>
-                  <p className="text-green-300 text-sm mt-1">We'll get back to you as soon as possible.</p>
+                  <p className="text-green-300 text-sm mt-1">We&apos;ll get back to you as soon as possible.</p>
                 </motion.div>
               )}
 

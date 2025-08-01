@@ -19,7 +19,7 @@ interface EmailSetting {
 export default function SettingsPage() {
   const [settings, setSettings] = useState<EmailSetting[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  // const [saving, setSaving] = useState(false);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
@@ -77,25 +77,8 @@ export default function SettingsPage() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
-    setStatus({ type: null, message: '' });
-
-    try {
-      const response = await fetch('/api/admin/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) throw new Error('Failed to save settings');
-
-      setStatus({ type: 'success', message: 'Settings saved successfully!' });
-      await fetchSettings(); // Refresh data
-    } catch (error) {
-      setStatus({ type: 'error', message: `Failed to save settings: ${error instanceof Error ? error.message : 'Unknown error'}` });
-    } finally {
-      setSaving(false);
-    }
+    // Currently disabled - settings are read-only
+    return;
   };
 
   if (loading) {
