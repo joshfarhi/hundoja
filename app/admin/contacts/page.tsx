@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useAdmin } from '@/contexts/AdminContext';
+import { useAdmin, Contact } from '@/contexts/AdminContext';
 import {
   Mail,
   Search,
   Eye,
-  Reply,
   Archive,
   Star,
   Clock,
@@ -21,6 +20,8 @@ import {
   X,
   Sparkles,
   Trash2,
+  Copy,
+  ExternalLink,
 } from 'lucide-react';
 
 const statusConfig = {
@@ -42,7 +43,7 @@ const categoryConfig = {
   general: { label: 'General', icon: MessageSquare },
   product_inquiry: { label: 'Product Inquiry', icon: MessageSquare },
   order_support: { label: 'Order Support', icon: Archive },
-  returns: { label: 'Returns', icon: Reply },
+  returns: { label: 'Returns', icon: Archive },
   business: { label: 'Business', icon: User },
   feedback: { label: 'Feedback', icon: Star },
   technical: { label: 'Technical', icon: AlertCircle },
@@ -54,6 +55,9 @@ export default function ContactsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<string>('');
 
   const filteredContacts = state.contacts.filter(contact => {
     const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -83,6 +87,26 @@ export default function ContactsPage() {
     const responded = new Date(respondedAt);
     const diffHours = Math.round((responded.getTime() - submitted.getTime()) / (1000 * 60 * 60));
     return `${diffHours}h`;
+  };
+
+  const handleCopyToClipboard = async (text: string, type: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFeedback(`${type} copied!`);
+      setTimeout(() => setCopyFeedback(''), 2000);
+    } catch {
+      setCopyFeedback('Failed to copy');
+      setTimeout(() => setCopyFeedback(''), 2000);
+    }
+  };
+
+  const handleDeleteContact = (contactId: string) => {
+    dispatch({ type: 'DELETE_CONTACT', payload: contactId });
+    setShowDeleteConfirm(null);
+  };
+
+  const handleViewContact = (contact: Contact) => {
+    setSelectedContact(contact);
   };
 
   return (
@@ -117,8 +141,8 @@ export default function ContactsPage() {
             )}
             whileHover={{ scale: 1.02 }}
           >
-            <Reply size={16} />
-            <span>Bulk Reply</span>
+            <Mail size={16} />
+            <span>Bulk Actions</span>
           </motion.button>
         </div>
       </motion.div>
@@ -379,29 +403,41 @@ export default function ContactsPage() {
                     <td className="p-4">
                       <div className="flex items-center space-x-2">
                         <motion.button
-                          className="p-2 hover:bg-white/10 rounded-lg transition-all"
+                          onClick={() => handleViewContact(contact)}
+                          className="p-2 hover:bg-blue-500/20 rounded-lg transition-all"
                           whileHover={{ scale: 1.05 }}
                           title="View Details"
                         >
-                          <Eye className="text-neutral-400" size={16} />
+                          <Eye className="text-blue-400" size={16} />
                         </motion.button>
                         <motion.button
-                          className="p-2 hover:bg-white/10 rounded-lg transition-all"
+                          onClick={() => handleCopyToClipboard(contact.email, 'Email')}
+                          className="p-2 hover:bg-green-500/20 rounded-lg transition-all"
                           whileHover={{ scale: 1.05 }}
-                          title="Reply"
+                          title="Copy Email"
                         >
-                          <Reply className="text-neutral-400" size={16} />
+                          <Mail className="text-green-400" size={16} />
                         </motion.button>
+                        {contact.phone && (
+                          <motion.button
+                            onClick={() => handleCopyToClipboard(contact.phone!, 'Phone')}
+                            className="p-2 hover:bg-cyan-500/20 rounded-lg transition-all"
+                            whileHover={{ scale: 1.05 }}
+                            title="Copy Phone"
+                          >
+                            <Phone className="text-cyan-400" size={16} />
+                          </motion.button>
+                        )}
                         <motion.button
-                          onClick={() => dispatch({ type: 'DELETE_CONTACT', payload: contact.id })}
+                          onClick={() => setShowDeleteConfirm(contact.id)}
                           className={cn(
                             "p-2 hover:bg-red-500/20 rounded-lg transition-all",
                             contact.isDemo && "hover:bg-purple-500/20"
                           )}
                           whileHover={{ scale: 1.05 }}
-                          title={contact.isDemo ? "Remove Demo Contact" : "Archive"}
+                          title={contact.isDemo ? "Remove Demo Contact" : "Delete Contact"}
                         >
-                          <Trash2 className={contact.isDemo ? "text-purple-400" : "text-neutral-400"} size={16} />
+                          <Trash2 className={contact.isDemo ? "text-purple-400" : "text-red-400"} size={16} />
                         </motion.button>
                       </div>
                     </td>
@@ -420,6 +456,204 @@ export default function ContactsPage() {
           </div>
         )}
       </motion.div>
+
+      {/* Copy Feedback */}
+      <AnimatePresence>
+        {copyFeedback && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 50, x: '-50%' }}
+            className="fixed bottom-4 left-1/2 transform bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50"
+          >
+            <div className="flex items-center space-x-2">
+              <CheckCircle size={16} />
+              <span>{copyFeedback}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Contact Details Modal */}
+      <AnimatePresence>
+        {selectedContact && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setSelectedContact(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-zinc-900 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-zinc-800"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-2">{selectedContact.subject}</h2>
+                  <div className="flex items-center space-x-4 text-sm text-neutral-400">
+                    <span>From: {selectedContact.name}</span>
+                    <span>•</span>
+                    <span>{formatDate(selectedContact.createdAt)}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedContact(null)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X className="text-neutral-400" size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Contact Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-zinc-800 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-white mb-2">Email</h3>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-300">{selectedContact.email}</span>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleCopyToClipboard(selectedContact.email, 'Email')}
+                          className="p-1 hover:bg-white/10 rounded transition-colors"
+                          title="Copy Email"
+                        >
+                          <Copy className="text-neutral-400" size={14} />
+                        </button>
+                        <a
+                          href={`mailto:${selectedContact.email}`}
+                          className="p-1 hover:bg-white/10 rounded transition-colors"
+                          title="Open in Email Client"
+                        >
+                          <ExternalLink className="text-neutral-400" size={14} />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedContact.phone && (
+                    <div className="bg-zinc-800 rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-white mb-2">Phone</h3>
+                      <div className="flex items-center justify-between">
+                        <span className="text-neutral-300">{selectedContact.phone}</span>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleCopyToClipboard(selectedContact.phone!, 'Phone')}
+                            className="p-1 hover:bg-white/10 rounded transition-colors"
+                            title="Copy Phone"
+                          >
+                            <Copy className="text-neutral-400" size={14} />
+                          </button>
+                          <a
+                            href={`tel:${selectedContact.phone}`}
+                            className="p-1 hover:bg-white/10 rounded transition-colors"
+                            title="Call Phone Number"
+                          >
+                            <ExternalLink className="text-neutral-400" size={14} />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Message */}
+                <div className="bg-zinc-800 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-white mb-3">Message</h3>
+                  <div className="text-neutral-300 whitespace-pre-wrap leading-relaxed">
+                    {selectedContact.message}
+                  </div>
+                </div>
+
+                {/* Metadata */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-neutral-500">Category</span>
+                    <div className="text-white font-medium mt-1">
+                      {categoryConfig[selectedContact.category as keyof typeof categoryConfig]?.label || selectedContact.category}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-neutral-500">Priority</span>
+                    <div className={cn("font-medium mt-1", priorityConfig[selectedContact.priority as keyof typeof priorityConfig]?.color)}>
+                      {priorityConfig[selectedContact.priority as keyof typeof priorityConfig]?.label || selectedContact.priority}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-neutral-500">Status</span>
+                    <div className="mt-1">
+                      <span className={cn(
+                        "px-2 py-1 rounded-full text-xs font-medium",
+                        statusConfig[selectedContact.status as keyof typeof statusConfig]?.color
+                      )}>
+                        {statusConfig[selectedContact.status as keyof typeof statusConfig]?.label || selectedContact.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-neutral-500">Submitted</span>
+                    <div className="text-white font-medium mt-1">
+                      {formatDate(selectedContact.submittedAt || selectedContact.createdAt)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowDeleteConfirm(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-zinc-900 rounded-lg p-6 max-w-md w-full border border-zinc-800"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <AlertCircle className="text-red-400" size={20} />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Delete Contact</h3>
+              </div>
+              
+              <p className="text-neutral-400 mb-6">
+                Are you sure you want to delete this contact request? This action cannot be undone.
+              </p>
+              
+              <div className="flex items-center justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="px-4 py-2 text-neutral-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <motion.button
+                  onClick={() => handleDeleteContact(showDeleteConfirm)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                >
+                  Delete
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
