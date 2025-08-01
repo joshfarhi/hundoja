@@ -111,7 +111,7 @@ type AdminAction =
 const demoProducts: Product[] = [
   {
     id: 'demo-1',
-    name: 'Shadow Oversized Hoodie',
+    name: 'Sample Product - Hoodie',
     price: 89.99,
     cost: 45.00,
     stock: 15,
@@ -119,117 +119,33 @@ const demoProducts: Product[] = [
     status: 'active',
     featured: true,
     image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=500&h=600&fit=crop',
-    sku: 'SOH-001',
-    sold: 124,
+    sku: 'SAMPLE-001',
+    sold: 0,
     createdAt: '2024-01-10',
     updatedAt: '2024-01-15',
     isDemo: true,
   },
   {
     id: 'demo-2',
-    name: 'Urban Cargo Pants',
+    name: 'Sample Product - Pants',
     price: 129.99,
     cost: 65.00,
-    stock: 8,
+    stock: 10,
     category: 'Pants',
     status: 'active',
     featured: true,
     image: 'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=500&h=600&fit=crop',
-    sku: 'UCP-002',
-    sold: 89,
+    sku: 'SAMPLE-002',
+    sold: 0,
     createdAt: '2024-01-08',
     updatedAt: '2024-01-14',
     isDemo: true,
   },
-  {
-    id: 'demo-3',
-    name: 'Minimal Logo Tee',
-    price: 45.99,
-    cost: 18.00,
-    stock: 32,
-    category: 'T-Shirts',
-    status: 'active',
-    featured: true,
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=600&fit=crop',
-    sku: 'MLT-003',
-    sold: 256,
-    createdAt: '2024-01-05',
-    updatedAt: '2024-01-12',
-    isDemo: true,
-  },
 ];
 
-const demoOrders: Order[] = [
-  {
-    id: 'demo-ord-001',
-    customer: {
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-    },
-    products: [
-      { name: 'Shadow Oversized Hoodie', quantity: 1, price: 89.99 }
-    ],
-    total: 89.99,
-    status: 'completed',
-    paymentStatus: 'paid',
-    shippingAddress: '123 Main St, New York, NY 10001',
-    orderDate: '2024-01-15T10:30:00Z',
-    deliveryDate: '2024-01-18T14:00:00Z',
-    isDemo: true,
-  },
-  {
-    id: 'demo-ord-002',
-    customer: {
-      name: 'Jane Smith',
-      email: 'jane.smith@example.com',
-    },
-    products: [
-      { name: 'Urban Cargo Pants', quantity: 1, price: 129.99 },
-      { name: 'Minimal Logo Tee', quantity: 2, price: 45.99 }
-    ],
-    total: 221.97,
-    status: 'processing',
-    paymentStatus: 'paid',
-    shippingAddress: '456 Oak Ave, Los Angeles, CA 90001',
-    orderDate: '2024-01-15T15:45:00Z',
-    isDemo: true,
-  },
-];
+const demoOrders: Order[] = [];
 
-const demoContacts: Contact[] = [
-  {
-    id: 'demo-contact-001',
-    name: 'Sarah Wilson',
-    email: 'sarah.wilson@example.com',
-    phone: '+1 (555) 123-4567',
-    subject: 'Question about sizing',
-    message: 'Hi, I was wondering about the sizing for the oversized hoodies. Do they run large or true to size?',
-    status: 'new',
-    priority: 'normal',
-    category: 'product_inquiry',
-    createdAt: '2024-01-16T14:30:00Z',
-    updatedAt: '2024-01-16T14:30:00Z',
-    submittedAt: '2024-01-16T14:30:00Z',
-    tags: ['sizing', 'hoodie'],
-    isDemo: true,
-  },
-  {
-    id: 'demo-contact-002',
-    name: 'Mike Johnson',
-    email: 'mike.johnson@example.com',
-    subject: 'Order issue',
-    message: 'My order hasn\'t arrived yet and it\'s been 2 weeks. Can you help me track it?',
-    status: 'in_progress',
-    priority: 'high',
-    category: 'order_support',
-    createdAt: '2024-01-14T09:15:00Z',
-    updatedAt: '2024-01-15T16:20:00Z',
-    submittedAt: '2024-01-14T09:15:00Z',
-    respondedAt: '2024-01-15T11:30:00Z',
-    tags: ['delivery', 'tracking', 'urgent'],
-    isDemo: true,
-  },
-];
+const demoContacts: Contact[] = [];
 
 // Initial state will be loaded from database in useEffect
 const getInitialDemoItemsHidden = (): boolean => {
