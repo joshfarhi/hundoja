@@ -29,18 +29,11 @@ export async function POST(request: NextRequest) {
     const realIp = request.headers.get('x-real-ip');
     const ipAddress = forwardedFor?.split(',')[0] || realIp || 'unknown';
     
-    console.log('Attempting to insert contact request:', {
-      ticket_number: ticketNumber,
-      name: validatedData.name,
-      email: validatedData.email,
-      category: validatedData.category,
-      priority: validatedData.priority
-    });
-    
     // Insert contact request into database
     const { data: contactRequest, error } = await supabase
       .from('contact_requests')
       .insert({
+        ticket_number: ticketNumber,
         name: validatedData.name,
         email: validatedData.email,
         phone: validatedData.phone || null,
@@ -55,19 +48,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Database error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
       return NextResponse.json(
         { error: 'Failed to submit contact request', details: error.message },
         { status: 500 }
       );
     }
-
-    console.log('Contact request created successfully:', contactRequest.id);
 
     // Send confirmation email to customer (optional)
     // You can implement email sending here similar to the newsletter route
@@ -80,8 +65,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Contact form error:', error);
-    
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { 

@@ -4,9 +4,6 @@ import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
-    // TEMPORARY: Bypass authentication for testing
-    // TODO: Re-enable authentication after admin user is set up
-    /*
     const { userId } = await auth();
     
     if (!userId) {
@@ -24,7 +21,6 @@ export async function GET(request: NextRequest) {
     if (adminError || !adminUser) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
-    */
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');

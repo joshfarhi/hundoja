@@ -61,6 +61,25 @@ export interface Contact {
   isDemo?: boolean;
 }
 
+// Database contact type (matches the contact_requests table structure)
+interface DatabaseContact {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+  status: 'new' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'normal' | 'urgent';
+  category: 'general' | 'product_inquiry' | 'order_support' | 'returns' | 'business' | 'feedback' | 'technical';
+  tags?: string[];
+  assigned_to?: string;
+  responded_at?: string;
+  response?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface AdminState {
   products: Product[];
   orders: Order[];
@@ -321,7 +340,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const productsSubscription = supabase
         .channel('products')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
-          console.log('Products change received!', payload);
           // Handle real-time updates
           switch (payload.eventType) {
             case 'INSERT':
@@ -341,7 +359,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const ordersSubscription = supabase
         .channel('orders')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
-          console.log('Orders change received!', payload);
           switch (payload.eventType) {
             case 'INSERT':
               dispatch({ type: 'ADD_ORDER', payload: payload.new as Order });
@@ -360,7 +377,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const contactsSubscription = supabase
         .channel('contacts')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_requests' }, (payload) => {
-          console.log('Contacts change received!', payload);
           switch (payload.eventType) {
             case 'INSERT':
               dispatch({ type: 'ADD_CONTACT', payload: payload.new as Contact });
@@ -403,12 +419,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to save preference');
       }
     } catch (error) {
-      console.warn('Failed to save demo items preference:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Failed to save demo items preference:', error);
+      }
       // Fallback to localStorage for offline support
       try {
         localStorage.setItem('hundoja_demo_items_hidden', 'true');
       } catch (localStorageError) {
-        console.warn('Failed to save to localStorage:', localStorageError);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to save to localStorage:', localStorageError);
+        }
       }
     }
   };
@@ -434,12 +454,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_ORDERS', payload: [...state.orders.filter(o => !o.isDemo), ...demoOrders] });
       dispatch({ type: 'SET_CONTACTS', payload: [...state.contacts.filter(c => !c.isDemo), ...demoContacts] });
     } catch (error) {
-      console.warn('Failed to reset demo items preference:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Failed to reset demo items preference:', error);
+      }
       // Fallback to localStorage
       try {
         localStorage.removeItem('hundoja_demo_items_hidden');
       } catch (localStorageError) {
-        console.warn('Failed to remove from localStorage:', localStorageError);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to remove from localStorage:', localStorageError);
+        }
       }
     }
   };
@@ -461,7 +485,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'REMOVE_DEMO_ITEMS' });
       }
     } catch (error) {
-      console.warn('Failed to load user preferences:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Failed to load user preferences:', error);
+      }
       // Fallback to localStorage
       try {
         const stored = localStorage.getItem('hundoja_demo_items_hidden');
@@ -470,7 +496,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
           dispatch({ type: 'REMOVE_DEMO_ITEMS' });
         }
       } catch (localStorageError) {
-        console.warn('Failed to load from localStorage:', localStorageError);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to load from localStorage:', localStorageError);
+        }
       }
     }
   };
@@ -495,7 +523,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       
       if (contactsResponse.contacts) {
         // Transform database contact format to match our interface
-        const transformedContacts = contactsResponse.contacts.map((contact: any) => ({
+        const transformedContacts = contactsResponse.contacts.map((contact: DatabaseContact) => ({
           id: contact.id,
           name: contact.name,
           email: contact.email,
@@ -508,7 +536,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
           createdAt: contact.created_at,
           updatedAt: contact.updated_at,
           submittedAt: contact.created_at, // Use created_at as submitted_at
-          respondedAt: contact.resolved_at,
+          respondedAt: contact.responded_at,
           tags: contact.tags || [],
           isDemo: false
         }));
@@ -516,16 +544,20 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to refresh data' });
-      console.error('Error refreshing admin data:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error refreshing admin data:', error);
+      }
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
-  // Load user preferences when user is available
+  // Load user preferences and data when user is available
   useEffect(() => {
     if (user?.id) {
-      loadUserPreferences();
+      loadUserPreferences().then(() => {
+        refreshData();
+      });
     }
   }, [user?.id]); // Run when user ID changes
 

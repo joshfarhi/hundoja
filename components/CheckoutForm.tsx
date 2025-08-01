@@ -59,26 +59,31 @@ export default function CheckoutForm() {
       } else {
         // Create order in database after successful payment
         try {
+          const customerEmail = user?.primaryEmailAddress?.emailAddress || '';
+          const customerName = user?.fullName || 'Guest Customer';
+          
           const orderData = {
             items: state.items,
             total: state.total,
             subtotal: state.total, // You can calculate tax/shipping separately if needed
             billing_address: {
-              name: user?.fullName || 'Customer',
-              email: user?.primaryEmailAddress?.emailAddress || 'customer@example.com',
-              line1: '123 Main St', // This should come from a form
-              city: 'City',
-              state: 'State', 
-              postal_code: '12345',
+              name: customerName,
+              email: customerEmail,
+              // TODO: These should come from a proper address form in production
+              line1: '',
+              city: '',
+              state: '', 
+              postal_code: '',
               country: 'US',
             },
             shipping_address: {
-              name: user?.fullName || 'Customer',
-              email: user?.primaryEmailAddress?.emailAddress || 'customer@example.com',
-              line1: '123 Main St', // This should come from a form
-              city: 'City',
-              state: 'State',
-              postal_code: '12345', 
+              name: customerName,
+              email: customerEmail,
+              // TODO: These should come from a proper address form in production
+              line1: '',
+              city: '',
+              state: '',
+              postal_code: '', 
               country: 'US',
             },
             stripe_payment_intent_id: paymentIntentId,
@@ -91,13 +96,13 @@ export default function CheckoutForm() {
           });
 
           if (!orderResponse.ok) {
-            console.error('Failed to create order record');
+            // Order creation failed, but payment succeeded - handle silently
           } else {
             const orderResult = await orderResponse.json();
-            console.log('Order created:', orderResult.order_number);
+            // Order created successfully
           }
         } catch (orderError) {
-          console.error('Error creating order:', orderError);
+          // Handle order creation error silently - payment already succeeded
         }
 
         // Clear cart on successful payment

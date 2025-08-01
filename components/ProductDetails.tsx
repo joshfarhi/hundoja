@@ -90,7 +90,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
           url: window.location.href,
         });
       } catch (err) {
-        console.log('Error sharing:', err);
+        // User cancelled sharing or error occurred - handle silently
       }
     } else {
       // Fallback to copying URL to clipboard

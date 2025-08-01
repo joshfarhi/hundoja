@@ -30,18 +30,14 @@ export default function SettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      console.log('Fetching settings...');
       const response = await fetch('/api/admin/settings');
-      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API Error:', errorText);
-        throw new Error(`Failed to fetch settings: ${response.status}`);
+        throw new Error(`Failed to fetch settings: ${response.status} - ${errorText}`);
       }
       
       const data = await response.json();
-      console.log('Settings data:', data);
       setSettings(data);
       
       // Initialize form data
@@ -51,7 +47,6 @@ export default function SettingsPage() {
       });
       setFormData(initialData);
     } catch (error) {
-      console.error('Error fetching settings:', error);
       setStatus({ type: 'error', message: `Failed to load settings: ${error instanceof Error ? error.message : 'Unknown error'}` });
       
       // Fallback: create default settings structure if API fails
@@ -97,8 +92,7 @@ export default function SettingsPage() {
       setStatus({ type: 'success', message: 'Settings saved successfully!' });
       await fetchSettings(); // Refresh data
     } catch (error) {
-      console.error('Error saving settings:', error);
-      setStatus({ type: 'error', message: 'Failed to save settings' });
+      setStatus({ type: 'error', message: `Failed to save settings: ${error instanceof Error ? error.message : 'Unknown error'}` });
     } finally {
       setSaving(false);
     }
