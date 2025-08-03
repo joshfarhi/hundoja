@@ -15,6 +15,9 @@ interface Product {
   stock_quantity: number;
   images: string[];
   is_active: boolean;
+  is_featured: boolean;
+  sizes: string[];
+  colors: string[];
   categories: { 
     id: string;
     slug: string; 
@@ -39,6 +42,9 @@ async function getProduct(id: string): Promise<Product | null> {
       stock_quantity,
       images,
       is_active,
+      is_featured,
+      sizes,
+      colors,
       created_at,
       categories!inner (
         id,

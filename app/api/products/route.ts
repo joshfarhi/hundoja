@@ -8,6 +8,7 @@ const ProductSearchSchema = z.object({
   limit: z.string().optional().transform(val => Math.min(parseInt(val || '20'), 100)), // Max 100 items
   search: z.string().optional(),
   category: z.string().optional(),
+  featured: z.string().optional().transform(val => val === 'true'),
   minPrice: z.string().optional().transform(val => val ? parseFloat(val) : undefined),
   maxPrice: z.string().optional().transform(val => val ? parseFloat(val) : undefined),
   inStock: z.string().optional().transform(val => val === 'true'),
@@ -20,14 +21,15 @@ export async function GET(request: NextRequest) {
     
     // Validate query parameters
     const validatedParams = ProductSearchSchema.parse({
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-      search: searchParams.get('search'),
-      category: searchParams.get('category'),
-      minPrice: searchParams.get('minPrice'),
-      maxPrice: searchParams.get('maxPrice'),
-      inStock: searchParams.get('inStock'),
-      sortBy: searchParams.get('sortBy'),
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
+      search: searchParams.get('search') || undefined,
+      category: searchParams.get('category') || undefined,
+      featured: searchParams.get('featured') || undefined,
+      minPrice: searchParams.get('minPrice') || undefined,
+      maxPrice: searchParams.get('maxPrice') || undefined,
+      inStock: searchParams.get('inStock') || undefined,
+      sortBy: searchParams.get('sortBy') || undefined,
     });
 
     const {
@@ -35,6 +37,7 @@ export async function GET(request: NextRequest) {
       limit,
       search,
       category,
+      featured,
       minPrice,
       maxPrice,
       inStock,
@@ -53,6 +56,9 @@ export async function GET(request: NextRequest) {
         stock_quantity,
         images,
         is_active,
+        is_featured,
+        sizes,
+        colors,
         created_at,
         categories (
           id,
@@ -70,6 +76,10 @@ export async function GET(request: NextRequest) {
     // Apply filters
     if (category) {
       query = query.eq('categories.slug', category);
+    }
+
+    if (featured) {
+      query = query.eq('is_featured', true);
     }
 
     if (minPrice !== undefined) {

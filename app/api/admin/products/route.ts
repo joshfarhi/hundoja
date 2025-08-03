@@ -6,7 +6,14 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const { data, error } = await supabase
     .from('products')
-    .select('*, categories(name)');
+    .select(`
+      *,
+      categories (
+        id,
+        name,
+        slug
+      )
+    `);
   
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -16,33 +23,90 @@ export async function GET() {
 
 // POST a new product
 export async function POST(request: Request) {
-  const productData = await request.json();
-  
-  const { data, error } = await supabase
-    .from('products')
-    .insert([productData])
-    .select();
+  try {
+    const body = await request.json();
+    console.log('POST request body:', body);
+    
+    const { categories, ...productData } = body;
+    
+    // Remove any other joined fields that might be present
+    const {
+      created_at,
+      updated_at,
+      search_vector,
+      ...cleanProductData
+    } = productData;
+    
+    console.log('Creating product with data:', cleanProductData);
+    
+    const { data, error } = await supabase
+      .from('products')
+      .insert([cleanProductData])
+      .select(`
+        *,
+        categories (
+          id,
+          name,
+          slug
+        )
+      `);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    console.log('Product created successfully:', data[0]);
+    return NextResponse.json(data[0]);
+  } catch (error) {
+    console.error('API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-  return NextResponse.json(data[0]);
 }
 
 // PUT (update) a product
 export async function PUT(request: Request) {
-  const { id, ...productData } = await request.json();
-  
-  const { data, error } = await supabase
-    .from('products')
-    .update(productData)
-    .eq('id', id)
-    .select();
+  try {
+    const body = await request.json();
+    console.log('PUT request body:', body);
+    
+    const { id, categories, ...productData } = body;
+    
+    // Remove any other joined fields that might be present
+    const {
+      created_at,
+      updated_at,
+      search_vector,
+      ...cleanProductData
+    } = productData;
+    
+    console.log('Updating product with ID:', id);
+    console.log('Clean update data:', cleanProductData);
+    
+    const { data, error } = await supabase
+      .from('products')
+      .update(cleanProductData)
+      .eq('id', id)
+      .select(`
+        *,
+        categories (
+          id,
+          name,
+          slug
+        )
+      `);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    console.log('Update successful:', data[0]);
+    return NextResponse.json(data[0]);
+  } catch (error) {
+    console.error('API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-  return NextResponse.json(data[0]);
 }
 
 // DELETE a product

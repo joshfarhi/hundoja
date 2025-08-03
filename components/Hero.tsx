@@ -30,14 +30,7 @@ export default function Hero() {
           </div>
         </motion.div>
         
-        <motion.p 
-          className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-        >
-          Where streetwear meets premium quality. Discover exclusive collections that define your urban style.
-        </motion.p>
+
         
         <motion.div
           className="flex flex-col sm:flex-row gap-4 justify-center mb-8"

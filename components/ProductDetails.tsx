@@ -311,7 +311,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
 
           {/* Product Features */}
           <div className="border-t border-neutral-800 pt-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3 p-3 bg-neutral-900/50 rounded-lg">
                 <Truck className="text-cyan-400" size={20} />
                 <div>
@@ -324,13 +324,6 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                 <div>
                   <p className="text-white font-medium text-sm">Secure Payment</p>
                   <p className="text-neutral-400 text-xs">100% protected</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-neutral-900/50 rounded-lg">
-                <Package className="text-orange-400" size={20} />
-                <div>
-                  <p className="text-white font-medium text-sm">Easy Returns</p>
-                  <p className="text-neutral-400 text-xs">30-day policy</p>
                 </div>
               </div>
             </div>

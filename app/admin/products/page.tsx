@@ -25,6 +25,9 @@ interface Product {
   category_id: string;
   images: string[];
   is_active: boolean;
+  is_featured: boolean;
+  sizes: string[];
+  colors: string[];
   categories: { name: string };
 }
 
@@ -58,15 +61,61 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }: { isO
 // Enhanced Product Modal
 const ProductModal = ({ product, categories, onClose, onSave }: { product: Product | null, categories: Category[], onClose: () => void, onSave: (data: Partial<Product>) => void }) => {
   const [isEditing, setIsEditing] = useState(!product); // Edit mode by default if it's a new product
-  const [formData, setFormData] = useState(product || { name: '', sku: '', description: '', price: 0, stock_quantity: 0, category_id: '', images: [], is_active: true });
+  const [formData, setFormData] = useState(product || { 
+    name: '', 
+    sku: '', 
+    description: '', 
+    price: 0, 
+    stock_quantity: 0, 
+    category_id: '', 
+    images: [], 
+    is_active: true, 
+    is_featured: false,
+    sizes: [] as string[],
+    colors: [] as string[]
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    
+    let finalValue: string | number | boolean;
+    
+    if (type === 'checkbox') {
+      finalValue = checked;
+    } else if (type === 'number') {
+      finalValue = value === '' ? 0 : parseFloat(value);
+    } else {
+      finalValue = value;
+    }
+    
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
+  };
+
+  const handleArrayInputChange = (field: 'sizes' | 'colors', value: string) => {
+    const items = value.split(',').map(item => item.trim()).filter(item => item.length > 0);
+    setFormData(prev => ({ ...prev, [field]: items }));
+  };
+
+  const addArrayItem = (field: 'sizes' | 'colors', item: string) => {
+    const currentArray = formData[field] || [];
+    if (item.trim() && !currentArray.includes(item.trim())) {
+      setFormData(prev => ({ 
+        ...prev, 
+        [field]: [...(prev[field] || []), item.trim()] 
+      }));
+    }
+  };
+
+  const removeArrayItem = (field: 'sizes' | 'colors', index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: (prev[field] || []).filter((_, i) => i !== index)
+    }));
   };
 
   const handleSave = () => {
+    console.log('Form data being saved:', formData);
     onSave(formData);
     // If it was an existing product, switch back to view mode
     if (product) {
@@ -120,6 +169,94 @@ const ProductModal = ({ product, categories, onClose, onSave }: { product: Produ
                   <option value="">Select Category</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2 text-white">
+                    <input 
+                      type="checkbox" 
+                      name="is_active" 
+                      checked={formData.is_active} 
+                      onChange={handleInputChange} 
+                      className="h-4 w-4 rounded bg-neutral-700 text-blue-600 focus:ring-blue-500 border-neutral-600" 
+                    />
+                    <span>Active</span>
+                  </label>
+                  <label className="flex items-center space-x-2 text-white">
+                    <input 
+                      type="checkbox" 
+                      name="is_featured" 
+                      checked={formData.is_featured} 
+                      onChange={handleInputChange} 
+                      className="h-4 w-4 rounded bg-neutral-700 text-blue-600 focus:ring-blue-500 border-neutral-600" 
+                    />
+                    <span>Featured</span>
+                  </label>
+                </div>
+
+                {/* Sizes */}
+                <div className="space-y-2">
+                  <label className="text-sm text-neutral-400">Sizes (comma-separated)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="S, M, L, XL" 
+                      value={formData.sizes.join(', ')} 
+                      onChange={(e) => handleArrayInputChange('sizes', e.target.value)}
+                      className="flex-1 bg-neutral-700 rounded p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                  </div>
+                  {formData.sizes.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {formData.sizes.map((size, index) => (
+                        <span 
+                          key={index}
+                          className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-sm flex items-center gap-1"
+                        >
+                          {size}
+                          <button 
+                            type="button"
+                            onClick={() => removeArrayItem('sizes', index)}
+                            className="text-blue-300 hover:text-white"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Colors */}
+                <div className="space-y-2">
+                  <label className="text-sm text-neutral-400">Colors (comma-separated)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Black, White, Red" 
+                      value={formData.colors.join(', ')} 
+                      onChange={(e) => handleArrayInputChange('colors', e.target.value)}
+                      className="flex-1 bg-neutral-700 rounded p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                  </div>
+                  {formData.colors.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {formData.colors.map((color, index) => (
+                        <span 
+                          key={index}
+                          className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-sm flex items-center gap-1"
+                        >
+                          {color}
+                          <button 
+                            type="button"
+                            onClick={() => removeArrayItem('colors', index)}
+                            className="text-purple-300 hover:text-white"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <div className="space-y-3 text-white">
@@ -147,6 +284,47 @@ const ProductModal = ({ product, categories, onClose, onSave }: { product: Produ
                   <div>
                     <label className="text-sm text-neutral-400">Stock</label>
                     <p className={cn(formData.stock_quantity > 10 ? 'text-green-400' : 'text-yellow-400', 'font-semibold')}>{formData.stock_quantity} units</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-neutral-400">Status</label>
+                    <div className="flex space-x-2">
+                      <span className={cn("px-2 py-1 rounded text-xs", formData.is_active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400")}>
+                        {formData.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                      {formData.is_featured && (
+                        <span className="px-2 py-1 rounded text-xs bg-blue-500/20 text-blue-400">
+                          Featured
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-neutral-400">Sizes</label>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {formData.sizes.length > 0 ? (
+                        formData.sizes.map((size, index) => (
+                          <span key={index} className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs">
+                            {size}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-neutral-500 text-xs">No sizes specified</span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-neutral-400">Colors</label>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {formData.colors.length > 0 ? (
+                        formData.colors.map((color, index) => (
+                          <span key={index} className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs">
+                            {color}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-neutral-500 text-xs">No colors specified</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -324,15 +502,51 @@ export default function ProductsPage() {
   };
   
   const handleSaveProduct = async (productData: Partial<Product>) => {
-    const { id, ...updateData } = productData;
-    const request = id 
-      ? supabase.from('products').update(updateData).eq('id', id)
-      : supabase.from('products').insert([updateData]);
+    try {
+      console.log('Saving product data:', productData);
+      
+      const { id, ...updateData } = productData;
+      
+      // Ensure numeric fields are properly typed
+      if (typeof updateData.price === 'string') {
+        updateData.price = parseFloat(updateData.price) || 0;
+      }
+      if (typeof updateData.stock_quantity === 'string') {
+        updateData.stock_quantity = parseInt(updateData.stock_quantity) || 0;
+      }
+      
+      console.log('Processed update data:', updateData);
+      
+      const response = await fetch('/api/admin/products', {
+        method: id ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+      });
 
-    await request;
-    setIsProductModalOpen(false);
-    setSelectedProduct(null);
-    // Real-time subscription will handle the UI update
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error saving product:', errorData);
+        alert(`Error saving product: ${errorData.error || 'Unknown error'}`);
+        return;
+      }
+
+      const result = await response.json();
+      console.log('Product saved successfully:', result);
+
+      setIsProductModalOpen(false);
+      setSelectedProduct(null);
+      
+      // Refresh the products list
+      fetchData();
+      
+    } catch (error) {
+      console.error('Error saving product:', error);
+      alert('Error saving product. Please try again.');
+    }
   };
   
   const handleDeleteClick = (product: Product) => {
