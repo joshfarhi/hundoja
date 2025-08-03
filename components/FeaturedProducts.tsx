@@ -219,7 +219,7 @@ export default function FeaturedProducts() {
                   </div>
                   
                   {/* Sizes and Colors */}
-                  {(product.sizes?.length > 0 || product.colors?.length > 0) && (
+                  {((product.sizes?.length || 0) > 0 || (product.colors?.length || 0) > 0) && (
                     <div className="flex flex-wrap gap-1 mb-4">
                       {product.sizes?.slice(0, 3).map((size, index) => (
                         <span key={`size-${index}`} className="text-xs px-1.5 py-0.5 bg-white/10 text-white rounded">
@@ -231,7 +231,7 @@ export default function FeaturedProducts() {
                           {color}
                         </span>
                       ))}
-                      {(product.sizes?.length > 3 || product.colors?.length > 2) && (
+                      {((product.sizes?.length || 0) > 3 || (product.colors?.length || 0) > 2) && (
                         <span className="text-xs px-1.5 py-0.5 bg-neutral-500/20 text-neutral-400 rounded">
                           +{((product.sizes?.length || 0) - 3 + (product.colors?.length || 0) - 2)} more
                         </span>
