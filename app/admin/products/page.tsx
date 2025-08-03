@@ -97,15 +97,7 @@ const ProductModal = ({ product, categories, onClose, onSave }: { product: Produ
     setFormData(prev => ({ ...prev, [field]: items }));
   };
 
-  const addArrayItem = (field: 'sizes' | 'colors', item: string) => {
-    const currentArray = formData[field] || [];
-    if (item.trim() && !currentArray.includes(item.trim())) {
-      setFormData(prev => ({ 
-        ...prev, 
-        [field]: [...(prev[field] || []), item.trim()] 
-      }));
-    }
-  };
+
 
   const removeArrayItem = (field: 'sizes' | 'colors', index: number) => {
     setFormData(prev => ({

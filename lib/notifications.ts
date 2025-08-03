@@ -6,7 +6,7 @@ export interface NotificationData {
   message: string;
   icon_name?: string;
   icon_color?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 const defaultIcons: Record<string, string> = {

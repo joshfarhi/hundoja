@@ -27,13 +27,13 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log('POST request body:', body);
     
-    const { categories, ...productData } = body;
+    const { categories: _categories, ...productData } = body;
     
     // Remove any other joined fields that might be present
     const {
-      created_at,
-      updated_at,
-      search_vector,
+      created_at: _created_at,
+      updated_at: _updated_at,
+      search_vector: _search_vector,
       ...cleanProductData
     } = productData;
     
@@ -70,13 +70,13 @@ export async function PUT(request: Request) {
     const body = await request.json();
     console.log('PUT request body:', body);
     
-    const { id, categories, ...productData } = body;
+    const { id, categories: _categories, ...productData } = body;
     
     // Remove any other joined fields that might be present
     const {
-      created_at,
-      updated_at,
-      search_vector,
+      created_at: _created_at,
+      updated_at: _updated_at,
+      search_vector: _search_vector,
       ...cleanProductData
     } = productData;
     
