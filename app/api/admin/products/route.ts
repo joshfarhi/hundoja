@@ -27,15 +27,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log('POST request body:', body);
     
-    const { categories: _categories, ...productData } = body;
-    
-    // Remove any other joined fields that might be present
-    const {
-      created_at: _created_at,
-      updated_at: _updated_at,
-      search_vector: _search_vector,
-      ...cleanProductData
-    } = productData;
+    // Remove joined fields that shouldn't be updated
+    const { categories, created_at, updated_at, search_vector, ...cleanProductData } = body;
     
     console.log('Creating product with data:', cleanProductData);
     
@@ -70,15 +63,8 @@ export async function PUT(request: Request) {
     const body = await request.json();
     console.log('PUT request body:', body);
     
-    const { id, categories: _categories, ...productData } = body;
-    
-    // Remove any other joined fields that might be present
-    const {
-      created_at: _created_at,
-      updated_at: _updated_at,
-      search_vector: _search_vector,
-      ...cleanProductData
-    } = productData;
+    // Remove joined fields that shouldn't be updated
+    const { id, categories, created_at, updated_at, search_vector, ...cleanProductData } = body;
     
     console.log('Updating product with ID:', id);
     console.log('Clean update data:', cleanProductData);
