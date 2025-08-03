@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Bell, Search, Menu } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 import NotificationDropdown from './NotificationDropdown';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const getPageTitle = (pathname: string) => {
   if (pathname.startsWith('/admin/products')) return 'Products';
@@ -23,6 +24,7 @@ export default function AdminHeader({ onMenuClick }: { onMenuClick: () => void }
   const pageTitle = getPageTitle(pathname);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -86,7 +88,18 @@ export default function AdminHeader({ onMenuClick }: { onMenuClick: () => void }
             whileTap={{ scale: 0.95 }}
           >
             <Bell size={20} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-neutral-900"></span>
+            {unreadCount > 0 && (
+              <motion.span 
+                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-neutral-900 flex items-center justify-center"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+              >
+                <span className="text-xs text-white font-semibold">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              </motion.span>
+            )}
           </motion.button>
           <AnimatePresence>
             {isNotificationsOpen && <NotificationDropdown />}

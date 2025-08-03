@@ -1,50 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { ShoppingBag, Package, UserPlus, Bell, X } from 'lucide-react';
-
-const initialNotifications = [
-  {
-    id: 1,
-    type: 'new_order',
-    text: 'New order #ORD-003 received from John Doe',
-    time: '2 minutes ago',
-    icon: ShoppingBag,
-    iconColor: 'text-blue-400',
-  },
-  {
-    id: 2,
-    type: 'low_stock',
-    text: 'Low stock alert: "Shadow Hoodie" has only 3 items left',
-    time: '1 hour ago',
-    icon: Package,
-    iconColor: 'text-yellow-400',
-  },
-  {
-    id: 3,
-    type: 'new_customer',
-    text: 'A new customer, Jane Smith, has registered',
-    time: '3 hours ago',
-    icon: UserPlus,
-    iconColor: 'text-green-400',
-  },
-  {
-    id: 4,
-    type: 'new_order',
-    text: 'New order #ORD-002 received from Jane Smith',
-    time: 'yesterday',
-    icon: ShoppingBag,
-    iconColor: 'text-blue-400',
-  },
-];
+import { Bell, X } from 'lucide-react';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export default function NotificationDropdown() {
-  const [notifications, setNotifications] = useState(initialNotifications);
-
-  const handleClearAll = () => setNotifications([]);
-  const handleClearOne = (id: number) => setNotifications(prev => prev.filter(n => n.id !== id));
+  const {
+    notifications,
+    loading,
+    error,
+    unreadCount,
+    markAsRead,
+    deleteNotification,
+    clearAllNotifications,
+    getIconComponent,
+  } = useNotifications();
 
   return (
     <motion.div
@@ -58,7 +30,7 @@ export default function NotificationDropdown() {
         <h3 className="font-semibold text-white">Notifications</h3>
         {notifications.length > 0 && (
           <button 
-            onClick={handleClearAll}
+            onClick={clearAllNotifications}
             className="text-xs text-cyan-400 hover:text-white font-semibold transition-colors"
           >
             Clear all
@@ -67,47 +39,67 @@ export default function NotificationDropdown() {
       </div>
 
       <div className="max-h-96 overflow-y-auto">
-        <AnimatePresence>
-          {notifications.length > 0 ? (
-            notifications.map((notification) => {
-              const Icon = notification.icon;
-              return (
-                <motion.div
-                  key={notification.id}
-                  layout
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
-                  className="group flex items-start space-x-4 p-4 hover:bg-neutral-800/60 transition-colors"
-                >
-                  <div className="flex-shrink-0 mt-1">
-                    <Icon className={cn(notification.iconColor, "w-5 h-5")} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-white leading-snug">{notification.text}</p>
-                    <p className="text-xs text-neutral-500 mt-1">{notification.time}</p>
-                  </div>
-                  <button 
-                    onClick={() => handleClearOne(notification.id)}
-                    className="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-white transition-opacity"
+        {loading ? (
+          <div className="text-center py-12 px-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+            <p className="text-sm text-neutral-500">Loading notifications...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12 px-4">
+            <p className="text-sm text-red-400 mb-2">Error loading notifications</p>
+            <p className="text-xs text-neutral-500">{error}</p>
+          </div>
+        ) : (
+          <AnimatePresence>
+            {notifications.length > 0 ? (
+              notifications.map((notification) => {
+                const Icon = getIconComponent(notification.icon_name);
+                return (
+                  <motion.div
+                    key={notification.id}
+                    layout
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
+                    className={cn(
+                      "group flex items-start space-x-4 p-4 hover:bg-neutral-800/60 transition-colors cursor-pointer",
+                      !notification.is_read && "bg-blue-500/10 border-l-2 border-blue-500"
+                    )}
+                    onClick={() => !notification.is_read && markAsRead(notification.id)}
                   >
-                    <X size={14} />
-                  </button>
-                </motion.div>
-              );
-            })
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-12 px-4"
-            >
-              <Bell size={32} className="text-neutral-600 mx-auto mb-4" />
-              <h4 className="font-semibold text-white">All caught up!</h4>
-              <p className="text-sm text-neutral-500 mt-1">You have no new notifications.</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                    <div className="flex-shrink-0 mt-1">
+                      <Icon className={cn(notification.icon_color, "w-5 h-5")} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-white leading-snug font-medium">{notification.title}</p>
+                      <p className="text-sm text-neutral-400 leading-snug mt-1">{notification.message}</p>
+                      <p className="text-xs text-neutral-500 mt-2">{notification.relative_time}</p>
+                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNotification(notification.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-white transition-opacity"
+                    >
+                      <X size={14} />
+                    </button>
+                  </motion.div>
+                );
+              })
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-12 px-4"
+              >
+                <Bell size={32} className="text-neutral-600 mx-auto mb-4" />
+                <h4 className="font-semibold text-white">All caught up!</h4>
+                <p className="text-sm text-neutral-500 mt-1">You have no new notifications.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
       </div>
     </motion.div>
   );

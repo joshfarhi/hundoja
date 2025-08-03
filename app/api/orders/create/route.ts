@@ -156,6 +156,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create order items' }, { status: 500 });
     }
 
+    // Create notification for new order
+    try {
+      await supabase
+        .from('notifications')
+        .insert({
+          type: 'new_order',
+          title: 'New Order Received',
+          message: `New order #${orderNumber} received from ${orderData.billing_address.name}`,
+          icon_name: 'ShoppingBag',
+          icon_color: 'text-blue-400',
+          metadata: {
+            order_id: order.id,
+            order_number: orderNumber,
+            customer_name: orderData.billing_address.name,
+            total_amount: orderData.total
+          }
+        });
+    } catch (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      // Don't fail the order creation if notification fails
+    }
+
     return NextResponse.json({ 
       success: true, 
       order_id: order.id,

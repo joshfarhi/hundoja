@@ -124,6 +124,27 @@ export async function POST(req: NextRequest) {
 
     await Promise.all(emailPromises);
 
+    // Create notification for new newsletter subscription
+    try {
+      await supabase
+        .from('notifications')
+        .insert({
+          type: 'new_customer',
+          title: 'New Newsletter Subscription',
+          message: `A new subscriber, ${fromName}, has joined the newsletter`,
+          icon_name: 'UserPlus',
+          icon_color: 'text-green-400',
+          metadata: {
+            email: email,
+            subscriber_name: fromName,
+            subscription_date: new Date().toISOString()
+          }
+        });
+    } catch (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      // Don't fail the subscription if notification fails
+    }
+
     return NextResponse.json({ 
       message: 'Successfully subscribed to newsletter!',
       success: true 

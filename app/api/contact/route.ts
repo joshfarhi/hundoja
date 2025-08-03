@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
+import { createContactNotification } from '@/lib/notifications';
 
 // Validation schema for contact form
 const ContactFormSchema = z.object({
@@ -52,6 +53,19 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to submit contact request', details: error.message },
         { status: 500 }
       );
+    }
+
+    // Create notification for new contact request
+    try {
+      await createContactNotification({
+        name: validatedData.name,
+        email: validatedData.email,
+        subject: validatedData.subject,
+        contactId: contactRequest.id
+      });
+    } catch (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      // Don't fail the contact submission if notification fails
     }
 
     // Send confirmation email to customer (optional)
