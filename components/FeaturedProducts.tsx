@@ -163,15 +163,14 @@ export default function FeaturedProducts() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product, index) => (
+        <div className="grid grid-cols-2 gap-2 max-w-2xl mx-auto">
+          {featuredProducts.slice(0, 4).map((product, index) => (
             <Link href={`/products/${product.id}`} key={product.id}>
               <motion.div
                 className={cn(
-                  "group relative bg-gradient-to-br from-neutral-900/80 to-neutral-800/40",
-                  "rounded-2xl overflow-hidden backdrop-blur-sm border border-white/[0.05]",
-                  "hover:border-white/[0.1] transition-all duration-500 hover:shadow-2xl",
-                  "hover:shadow-white/10 hover:-translate-y-1 cursor-pointer"
+                  "group relative bg-white",
+                  "overflow-hidden",
+                  "hover:opacity-90 transition-all duration-300 cursor-pointer"
                 )}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -183,82 +182,20 @@ export default function FeaturedProducts() {
                     src={product.images?.[0] || '/placeholder-product.jpg'}
                     alt={product.name}
                     fill
-                    className="object-cover transition-all duration-700 group-hover:scale-110"
+                    className="object-cover transition-all duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-500" />
                   
-                  {/* Gradient shine effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                </div>
-                
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-white group-hover:text-gray-300 transition-colors">
+                  {/* Overlay text like in screenshot */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-center py-4">
+                    <h3 className="text-white font-bold text-sm uppercase tracking-wide">
                       {product.name}
                     </h3>
-                    <span className="text-white font-bold">${product.price.toFixed(2)}</span>
-                  </div>
-                  
-                  <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                    {product.description}
-                  </p>
-                  
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">
-                      {product.categories?.name || 'Uncategorized'}
-                    </span>
-                    <span className={cn(
-                      "text-xs px-2 py-1 rounded-full",
-                      product.stock_quantity > 0 
-                        ? "bg-white/20 text-white" 
-                        : "bg-neutral-600/20 text-neutral-400"
-                    )}>
-                      {product.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
-                    </span>
-                  </div>
-                  
-                  {/* Sizes and Colors */}
-                  {((product.sizes?.length || 0) > 0 || (product.colors?.length || 0) > 0) && (
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {product.sizes?.slice(0, 3).map((size, index) => (
-                        <span key={`size-${index}`} className="text-xs px-1.5 py-0.5 bg-white/10 text-white rounded">
-                          {size}
-                        </span>
-                      ))}
-                      {product.colors?.slice(0, 2).map((color, index) => (
-                        <span key={`color-${index}`} className="text-xs px-1.5 py-0.5 bg-white/10 text-white rounded">
-                          {color}
-                        </span>
-                      ))}
-                      {((product.sizes?.length || 0) > 3 || (product.colors?.length || 0) > 2) && (
-                        <span className="text-xs px-1.5 py-0.5 bg-neutral-500/20 text-neutral-400 rounded">
-                          +{((product.sizes?.length || 0) - 3 + (product.colors?.length || 0) - 2)} more
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Add to Cart Button */}
-                  <motion.button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      addToCart(product);
-                    }}
-                    disabled={product.stock_quantity === 0}
-                    className={cn(
-                      "w-full py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2",
-                      product.stock_quantity > 0
-                        ? "bg-white text-black hover:bg-gray-200 hover:scale-[1.02]"
-                        : "bg-neutral-700 text-neutral-500 cursor-not-allowed"
+                    {product.categories?.name && (
+                      <p className="text-white/80 text-xs mt-1">
+                        {product.categories.name}
+                      </p>
                     )}
-                    whileHover={product.stock_quantity > 0 ? { scale: 1.02 } : {}}
-                    whileTap={product.stock_quantity > 0 ? { scale: 0.98 } : {}}
-                  >
-                    <ShoppingCart size={16} />
-                    {product.stock_quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
-                  </motion.button>
+                  </div>
                 </div>
               </motion.div>
             </Link>

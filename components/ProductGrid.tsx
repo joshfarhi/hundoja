@@ -282,7 +282,7 @@ export default function ProductGrid({ initialProducts, categories }: ProductGrid
       ) : (
         <div className={cn(
           viewMode === 'grid' 
-            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+            ? 'grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 lg:gap-6'
             : 'space-y-4'
         )}>
           {filteredAndSortedProducts.map((product, index) => (
@@ -292,8 +292,8 @@ export default function ProductGrid({ initialProducts, categories }: ProductGrid
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
               className={cn(
-                'group relative bg-neutral-900 rounded-xl overflow-hidden border border-neutral-800 hover:border-neutral-700 transition-all duration-300',
-                viewMode === 'list' ? 'flex gap-4 p-4' : ''
+                'group relative bg-white overflow-hidden hover:opacity-90 transition-all duration-300',
+                viewMode === 'list' ? 'flex gap-4 p-4 bg-neutral-900 border border-neutral-800 rounded-lg' : ''
               )}
             >
               {/* Product Image */}
@@ -307,80 +307,90 @@ export default function ProductGrid({ initialProducts, categories }: ProductGrid
                       src={product.images[0]}
                       alt={product.name}
                       fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
-                      <Package className="text-neutral-600" size={48} />
+                    <div className="w-full h-full bg-neutral-200 flex items-center justify-center">
+                      <Package className="text-neutral-400" size={48} />
                     </div>
                   )}
                 </Link>
                 
-                {/* Stock Badge */}
-                <div className="absolute top-2 right-2">
-                  <span className={cn(
-                    'px-2 py-1 text-xs font-medium rounded-full',
-                    product.stock_quantity > 10 
-                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                      : product.stock_quantity > 0
-                      ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                      : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                  )}>
-                    {product.stock_quantity > 0 ? `${product.stock_quantity} left` : 'Out of stock'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Product Info */}
-              <div className={cn(
-                'flex-1',
-                viewMode === 'grid' ? 'p-4' : ''
-              )}>
-                <div className="flex-1">
-                  <Link href={`/products/${product.id}`}>
-                    <h3 className="font-semibold text-white group-hover:text-cyan-400 transition-colors line-clamp-2">
+                {viewMode === 'grid' && (
+                  /* Overlay text like in screenshot */
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-center py-4">
+                    <h3 className="text-white font-bold text-sm uppercase tracking-wide line-clamp-1">
                       {product.name}
                     </h3>
-                  </Link>
-                  
-                  <p className="text-neutral-400 text-sm mt-1">
-                    {product.categories?.name || 'Uncategorized'}
-                  </p>
-                  
-                  {viewMode === 'list' && (
+                    {product.categories?.name && (
+                      <p className="text-white/80 text-xs mt-1">
+                        {product.categories.name}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {/* Stock Badge for list view */}
+                {viewMode === 'list' && (
+                  <div className="absolute top-2 right-2">
+                    <span className={cn(
+                      'px-2 py-1 text-xs font-medium rounded-full',
+                      product.stock_quantity > 10 
+                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                        : product.stock_quantity > 0
+                        ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                    )}>
+                      {product.stock_quantity > 0 ? `${product.stock_quantity} left` : 'Out of stock'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Product Info - Only show in list view */}
+              {viewMode === 'list' && (
+                <div className="flex-1">
+                  <div className="flex-1">
+                    <Link href={`/products/${product.id}`}>
+                      <h3 className="font-semibold text-white group-hover:text-cyan-400 transition-colors line-clamp-2">
+                        {product.name}
+                      </h3>
+                    </Link>
+                    
+                    <p className="text-neutral-400 text-sm mt-1">
+                      {product.categories?.name || 'Uncategorized'}
+                    </p>
+                    
                     <p className="text-neutral-500 text-sm mt-2 line-clamp-2">
                       {product.description}
                     </p>
-                  )}
-                  
-                  <p className="text-neutral-500 text-xs mt-1 font-mono">
-                    SKU: {product.sku}
-                  </p>
-                </div>
+                    
+                    <p className="text-neutral-500 text-xs mt-1 font-mono">
+                      SKU: {product.sku}
+                    </p>
+                  </div>
 
-                <div className={cn(
-                  'flex items-center justify-between',
-                  viewMode === 'grid' ? 'mt-4' : 'mt-3'
-                )}>
-                  <span className="text-white font-bold text-xl">
-                    ${product.price.toFixed(2)}
-                  </span>
-                  
-                  <button
-                    onClick={() => addToCart(product)}
-                    disabled={product.stock_quantity === 0}
-                    className={cn(
-                      'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all',
-                      product.stock_quantity > 0
-                        ? 'bg-white text-black hover:bg-gray-200 hover:scale-105'
-                        : 'bg-neutral-700 text-neutral-500 cursor-not-allowed'
-                    )}
-                  >
-                    <ShoppingBag size={16} />
-                    {product.stock_quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
-                  </button>
+                  <div className="flex items-center justify-between mt-3">
+                    <span className="text-white font-bold text-xl">
+                      ${product.price.toFixed(2)}
+                    </span>
+                    
+                    <button
+                      onClick={() => addToCart(product)}
+                      disabled={product.stock_quantity === 0}
+                      className={cn(
+                        'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all',
+                        product.stock_quantity > 0
+                          ? 'bg-white text-black hover:bg-gray-200 hover:scale-105'
+                          : 'bg-neutral-700 text-neutral-500 cursor-not-allowed'
+                      )}
+                    >
+                      <ShoppingBag size={16} />
+                      {product.stock_quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </motion.div>
           ))}
         </div>
