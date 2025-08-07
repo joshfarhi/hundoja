@@ -15,6 +15,7 @@ import {
   Users,
   Settings,
   BarChart3,
+  Mail,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -39,6 +40,11 @@ const sidebarItems = [
     title: 'Contact Requests',
     href: '/admin/contacts',
     icon: MessageSquare,
+  },
+  {
+    title: 'Newsletter',
+    href: '/admin/newsletter',
+    icon: Mail,
   },
   {
     title: 'Customers',

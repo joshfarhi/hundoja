@@ -71,6 +71,18 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const updates = body;
 
+    // First check if user is admin
+    const { data: adminUser, error: adminError } = await supabase
+      .from('admin_users')
+      .select('id, role')
+      .eq('clerk_user_id', userId)
+      .eq('is_active', true)
+      .single();
+
+    if (adminError || !adminUser) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
     // Update preferences in database
     const { error } = await supabase
       .from('admin_user_preferences')

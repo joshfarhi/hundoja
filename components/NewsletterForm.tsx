@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Mail, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, Send, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react';
+import { countries, Country } from '@/data/countries';
 
 interface NewsletterFormProps {
   variant?: 'hero' | 'footer';
@@ -12,8 +13,51 @@ interface NewsletterFormProps {
 
 export default function NewsletterForm({ variant = 'footer', className }: NewsletterFormProps) {
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]); // Default to US
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowCountryDropdown(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const validatePhone = (phoneNumber: string) => {
+    // Remove all non-digit characters for validation
+    const digitsOnly = phoneNumber.replace(/\D/g, '');
+    // Basic validation: should have at least 7 digits and max 15 digits
+    return digitsOnly.length >= 7 && digitsOnly.length <= 15;
+  };
+
+  const formatPhoneNumber = (value: string, countryCode: string) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '');
+    
+    // Format based on country (basic US/Canada formatting for now)
+    if (countryCode === 'US' || countryCode === 'CA') {
+      if (digits.length <= 3) return digits;
+      if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+    }
+    
+    // Basic international formatting (groups of 3-4 digits)
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+    if (digits.length <= 10) return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 10)} ${digits.slice(10)}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,16 +74,30 @@ export default function NewsletterForm({ variant = 'footer', className }: Newsle
       return;
     }
 
+    if (phone && !validatePhone(phone)) {
+      setStatus('error');
+      setMessage('Please enter a valid phone number');
+      return;
+    }
+
     setStatus('loading');
     setMessage('');
 
     try {
+      const subscriptionData = {
+        email,
+        ...(phone && { 
+          phone: `${selectedCountry.dialCode}${phone.replace(/\D/g, '')}`,
+          country: selectedCountry.code 
+        })
+      };
+
       const response = await fetch('/api/newsletter', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify(subscriptionData),
       });
 
       const data = await response.json();
@@ -51,6 +109,7 @@ export default function NewsletterForm({ variant = 'footer', className }: Newsle
       setStatus('success');
       setMessage('🎉 Successfully subscribed to our newsletter!');
       setEmail('');
+      setPhone('');
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'Something went wrong. Please try again.');
@@ -89,6 +148,96 @@ export default function NewsletterForm({ variant = 'footer', className }: Newsle
             disabled={status === 'loading'}
             className={cn(
               "w-full pl-10 pr-4 py-3 rounded-lg border transition-all duration-200",
+              "focus:outline-none focus:ring-2",
+              isHero ? [
+                "bg-black/30 border-white/20 text-white placeholder-gray-300",
+                "focus:ring-white/30 focus:border-white/40",
+                "backdrop-blur-sm"
+              ] : [
+                "bg-neutral-800 border-neutral-700 text-white placeholder-gray-400",
+                "focus:ring-cyan-500/50 focus:border-cyan-500/50"
+              ],
+              status === 'loading' && "opacity-50 cursor-not-allowed"
+            )}
+          />
+        </div>
+
+        {/* Phone Number Field with Country Code */}
+        <div className="relative">
+          {/* Country Code Dropdown */}
+          <div ref={dropdownRef} className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20">
+            <button
+              type="button"
+              onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+              disabled={status === 'loading'}
+              className={cn(
+                "flex items-center space-x-1 px-2 py-1 rounded text-sm",
+                "hover:bg-white/10 transition-colors duration-200",
+                "focus:outline-none",
+                isHero ? "text-gray-300 hover:text-white" : "text-gray-400 hover:text-white",
+                status === 'loading' && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              <span className="text-base">{selectedCountry.flag}</span>
+              <span className="text-xs font-mono">{selectedCountry.dialCode}</span>
+              <ChevronDown size={12} className={cn(
+                "transition-transform duration-200",
+                showCountryDropdown && "rotate-180"
+              )} />
+            </button>
+            
+            {showCountryDropdown && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className={cn(
+                  "absolute top-full mt-1 w-64 max-h-60 overflow-y-auto",
+                  "rounded-lg border backdrop-blur-sm z-30",
+                  isHero ? [
+                    "bg-black/80 border-white/20"
+                  ] : [
+                    "bg-neutral-800 border-neutral-700"
+                  ]
+                )}
+              >
+                {countries.map((country) => (
+                  <button
+                    key={country.code}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCountry(country);
+                      setShowCountryDropdown(false);
+                    }}
+                    className={cn(
+                      "w-full flex items-center space-x-3 px-3 py-2 text-left text-sm",
+                      "hover:bg-white/10 transition-colors duration-200",
+                      "focus:outline-none focus:bg-white/10",
+                      selectedCountry.code === country.code && "bg-white/10",
+                      isHero ? "text-gray-300 hover:text-white" : "text-gray-400 hover:text-white"
+                    )}
+                  >
+                    <span className="text-base">{country.flag}</span>
+                    <span className="font-mono text-xs">{country.dialCode}</span>
+                    <span className="truncate">{country.name}</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </div>
+          
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => {
+              const rawValue = e.target.value.replace(/[^\d]/g, '');
+              const formattedValue = formatPhoneNumber(rawValue, selectedCountry.code);
+              setPhone(formattedValue);
+            }}
+            placeholder="Phone (optional)"
+            disabled={status === 'loading'}
+            className={cn(
+              "w-full pl-28 pr-4 py-3 rounded-lg border transition-all duration-200",
               "focus:outline-none focus:ring-2",
               isHero ? [
                 "bg-black/30 border-white/20 text-white placeholder-gray-300",

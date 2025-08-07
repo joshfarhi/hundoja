@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import NewsletterForm from './NewsletterForm';
 import Image from 'next/image';
@@ -25,32 +24,13 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <div className="w-[280px] sm:w-[400px]">
-            <Image src="/Hundoja-2025-logo.webp" alt="Hundoja Logo" width={400} height={133} priority />
+          <div className="w-[196px] sm:w-[280px]">
+            <Image src="/Hundoja-2025-logo.webp" alt="Hundoja Logo" width={280} height={93} priority />
           </div>
         </motion.div>
         
 
         
-        <motion.div
-          className="flex flex-col sm:flex-row gap-4 justify-center mb-8"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-        >
-          <Link
-            href="/products"
-            className="bg-white text-black px-8 py-4 text-lg font-semibold hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
-          >
-            SHOP NOW
-          </Link>
-          <Link
-            href="/about"
-            className="border-2 border-white text-white px-8 py-4 text-lg font-semibold hover:bg-white hover:text-black transition-all duration-300"
-          >
-            LEARN MORE
-          </Link>
-        </motion.div>
 
         {/* Newsletter Form */}
         <motion.div
