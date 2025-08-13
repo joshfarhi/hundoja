@@ -1,61 +1,106 @@
 
+import { checkAdminAccess } from '@/lib/adminAuth';
 import { supabase } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
 
 // GET all categories
 export async function GET() {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*, products(id)');
-  
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const { isAdmin, error } = await checkAdminAccess();
+    
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+    }
+
+    const { data, error: dbError } = await supabase
+      .from('categories')
+      .select('*, products(id)');
+    
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message }, { status: 500 });
+    }
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Categories GET error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-  return NextResponse.json(data);
 }
 
 // POST a new category
 export async function POST(request: Request) {
-  const categoryData = await request.json();
-  
-  const { data, error } = await supabase
-    .from('categories')
-    .insert([categoryData])
-    .select();
+  try {
+    const { isAdmin, error } = await checkAdminAccess();
+    
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+    }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const categoryData = await request.json();
+    
+    const { data, error: dbError } = await supabase
+      .from('categories')
+      .insert([categoryData])
+      .select();
+
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message }, { status: 500 });
+    }
+    return NextResponse.json(data[0]);
+  } catch (error) {
+    console.error('Categories POST error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-  return NextResponse.json(data[0]);
 }
 
 // PUT (update) a category
 export async function PUT(request: Request) {
-  const { id, ...categoryData } = await request.json();
-  
-  const { data, error } = await supabase
-    .from('categories')
-    .update(categoryData)
-    .eq('id', id)
-    .select();
+  try {
+    const { isAdmin, error } = await checkAdminAccess();
+    
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+    }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const { id, ...categoryData } = await request.json();
+    
+    const { data, error: dbError } = await supabase
+      .from('categories')
+      .update(categoryData)
+      .eq('id', id)
+      .select();
+
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message }, { status: 500 });
+    }
+    return NextResponse.json(data[0]);
+  } catch (error) {
+    console.error('Categories PUT error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-  return NextResponse.json(data[0]);
 }
 
 // DELETE a category
 export async function DELETE(request: Request) {
-  const { id } = await request.json();
+  try {
+    const { isAdmin, error } = await checkAdminAccess();
+    
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+    }
 
-  const { error } = await supabase
-    .from('categories')
-    .delete()
-    .eq('id', id);
+    const { id } = await request.json();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const { error: dbError } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id);
+
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message }, { status: 500 });
+    }
+    return NextResponse.json({ message: 'Category deleted successfully' });
+  } catch (error) {
+    console.error('Categories DELETE error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-  return NextResponse.json({ message: 'Category deleted successfully' });
 } 

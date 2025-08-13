@@ -1,26 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { checkAdminAccess } from '@/lib/adminAuth';
 import { supabase } from '@/lib/supabase';
 import { encrypt } from '@/lib/email-settings';
 
 // GET - Fetch all email settings
 export async function GET() {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const { data: adminUser } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('clerk_user_id', userId)
-      .eq('is_active', true)
-      .single();
-
-    if (!adminUser) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    const { isAdmin, error, user } = await checkAdminAccess();
+    
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
     }
 
     // Fetch all email settings
@@ -52,21 +41,10 @@ export async function GET() {
 // PUT - Update email settings
 export async function PUT(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const { data: adminUser } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('clerk_user_id', userId)
-      .eq('is_active', true)
-      .single();
-
-    if (!adminUser) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    const { isAdmin, error, user } = await checkAdminAccess();
+    
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
     }
 
     const formData = await req.json();
@@ -97,7 +75,7 @@ export async function PUT(req: NextRequest) {
           setting_key: key,
           setting_value: finalValue,
           encrypted: currentSetting?.encrypted || false,
-          updated_by: adminUser.id,
+          updated_by: user.id,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'setting_key'

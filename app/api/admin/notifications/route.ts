@@ -1,25 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkAdminAccess } from '@/lib/adminAuth';
 import { supabase } from '@/lib/supabase';
-import { auth } from '@clerk/nextjs/server';
 
 // GET - Fetch all notifications
 export async function GET() {
   try {
-    const { userId } = await auth();
+    const { isAdmin, error } = await checkAdminAccess();
     
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const { data: adminUser, error: adminError } = await supabase
-      .from('admin_users')
-      .select('id')
-      .eq('clerk_user_id', userId)
-      .single();
-
-    if (adminError || !adminUser) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
     }
 
     // Get notifications with relative time using the function we created
@@ -41,10 +30,10 @@ export async function GET() {
 // POST - Create a new notification
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { isAdmin, error } = await checkAdminAccess();
     
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -52,17 +41,6 @@ export async function POST(request: NextRequest) {
 
     if (!type || !title || !message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    // Check if user is admin
-    const { data: adminUser, error: adminError } = await supabase
-      .from('admin_users')
-      .select('id')
-      .eq('clerk_user_id', userId)
-      .single();
-
-    if (adminError || !adminUser) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const { data: notification, error } = await supabase
@@ -93,10 +71,10 @@ export async function POST(request: NextRequest) {
 // PUT - Mark notification as read
 export async function PUT(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { isAdmin, error } = await checkAdminAccess();
     
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -104,17 +82,6 @@ export async function PUT(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ error: 'Notification ID required' }, { status: 400 });
-    }
-
-    // Check if user is admin
-    const { data: adminUser, error: adminError } = await supabase
-      .from('admin_users')
-      .select('id')
-      .eq('clerk_user_id', userId)
-      .single();
-
-    if (adminError || !adminUser) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const { data: notification, error } = await supabase
@@ -139,26 +106,15 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete a notification or clear all
 export async function DELETE(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { isAdmin, error } = await checkAdminAccess();
     
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const clearAll = searchParams.get('clearAll') === 'true';
-
-    // Check if user is admin
-    const { data: adminUser, error: adminError } = await supabase
-      .from('admin_users')
-      .select('id')
-      .eq('clerk_user_id', userId)
-      .single();
-
-    if (adminError || !adminUser) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
 
     let error;
 

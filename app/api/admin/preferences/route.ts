@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { checkAdminAccess } from '@/lib/adminAuth';
 import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    const { userId } = await auth();
+    const { isAdmin, error } = await checkAdminAccess();
     
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
     }
+
+    // Note: We still need the userId for the RPC function
+    const { userId } = await auth();
 
     // Get user preferences from database
     const { data: preferences, error } = await supabase
@@ -28,11 +32,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { isAdmin, error } = await checkAdminAccess();
     
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
     }
+
+    // Note: We still need the userId for the RPC function
+    const { userId } = await auth();
 
     const body = await request.json();
     const { demo_items_hidden } = body;
@@ -62,26 +69,16 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { isAdmin, error } = await checkAdminAccess();
     
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
     }
 
+    // Note: We still need the userId for the database operation
+    const { userId } = await auth();
     const body = await request.json();
     const updates = body;
-
-    // First check if user is admin
-    const { data: adminUser, error: adminError } = await supabase
-      .from('admin_users')
-      .select('id, role')
-      .eq('clerk_user_id', userId)
-      .eq('is_active', true)
-      .single();
-
-    if (adminError || !adminUser) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
 
     // Update preferences in database
     const { error } = await supabase

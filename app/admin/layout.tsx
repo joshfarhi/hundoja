@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 import { redirect } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -11,41 +11,60 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 
+// Hardcoded allowed admin emails for maximum security
+const ALLOWED_ADMIN_EMAILS = [
+  'joshfarhi12@gmail.com',
+  'm.zalo@icloud.com', 
+  'hundoja@gmail.com'
+];
+
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const { isLoaded, userId } = useAuth();
+  const { user } = useUser();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     async function checkAdminStatus() {
-      if (!userId) {
+      if (!userId || !user?.primaryEmailAddress?.emailAddress) {
         setIsAdmin(false);
         return;
       }
       
+      const userEmail = user.primaryEmailAddress.emailAddress;
+      
+      // First check: Hardcoded email security (primary protection)
+      if (!ALLOWED_ADMIN_EMAILS.includes(userEmail)) {
+        setIsAdmin(false);
+        return;
+      }
+      
+      // Second check: Database verification (secondary protection)
       try {
         const { data, error } = await supabase
           .from('admin_users')
-          .select('id, role')
+          .select('id, role, email')
           .eq('clerk_user_id', userId)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .eq('email', userEmail);
         
-        setIsAdmin(!error && data && data.length > 0);
+        const isValidAdmin = !error && data && data.length > 0;
+        setIsAdmin(isValidAdmin);
       } catch (error) {
         console.error('Error checking admin status:', error);
         setIsAdmin(false);
       }
     }
     
-    if (isLoaded) {
+    if (isLoaded && user) {
       checkAdminStatus();
     }
-  }, [isLoaded, userId]);
+  }, [isLoaded, userId, user]);
 
   if (!isLoaded || isAdmin === null) {
     return (

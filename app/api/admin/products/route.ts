@@ -1,29 +1,46 @@
 
+import { checkAdminAccess } from '@/lib/adminAuth';
 import { supabase } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
 
 // GET all products
 export async function GET() {
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      *,
-      categories (
-        id,
-        name,
-        slug
-      )
-    `);
-  
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const { isAdmin, error } = await checkAdminAccess();
+    
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+    }
+
+    const { data, error: dbError } = await supabase
+      .from('products')
+      .select(`
+        *,
+        categories (
+          id,
+          name,
+          slug
+        )
+      `);
+    
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message }, { status: 500 });
+    }
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Products GET error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-  return NextResponse.json(data);
 }
 
 // POST a new product
 export async function POST(request: Request) {
   try {
+    const { isAdmin, error } = await checkAdminAccess();
+    
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+    }
     const body = await request.json();
     console.log('POST request body:', body);
     
@@ -64,6 +81,11 @@ export async function POST(request: Request) {
 // PUT (update) a product
 export async function PUT(request: Request) {
   try {
+    const { isAdmin, error } = await checkAdminAccess();
+    
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+    }
     const body = await request.json();
     console.log('PUT request body:', body);
     
@@ -108,15 +130,26 @@ export async function PUT(request: Request) {
 
 // DELETE a product
 export async function DELETE(request: Request) {
-  const { id } = await request.json();
+  try {
+    const { isAdmin, error } = await checkAdminAccess();
+    
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+    }
 
-  const { error } = await supabase
-    .from('products')
-    .delete()
-    .eq('id', id);
+    const { id } = await request.json();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const { error: dbError } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
+
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message }, { status: 500 });
+    }
+    return NextResponse.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    console.error('Products DELETE error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-  return NextResponse.json({ message: 'Product deleted successfully' });
 } 

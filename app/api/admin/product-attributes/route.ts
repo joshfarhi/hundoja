@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
+import { checkAdminAccess } from '@/lib/adminAuth';
 import { supabase } from '@/lib/supabase';
 
 // GET unique product attributes (sizes and colors)
 export async function GET() {
   try {
+    const { isAdmin, error } = await checkAdminAccess();
+    
+    if (!isAdmin) {
+      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+    }
     // Get unique sizes
     const { data: sizesData, error: sizesError } = await supabase
       .from('products')

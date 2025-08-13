@@ -20,7 +20,8 @@
       "WebFetch(domain:docs.stripe.com)",
       "Bash(lsof:*)",
       "Bash(npm audit:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "WebFetch(domain:hundoja.vercel.app)"
     ],
     "deny": []
   }
