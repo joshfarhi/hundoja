@@ -4,10 +4,10 @@ import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -128,10 +128,10 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     const { id, ...updates } = await request.json();
@@ -175,10 +175,10 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     const { id } = await request.json();

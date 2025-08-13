@@ -5,10 +5,10 @@ import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     // Note: We still need the userId for the RPC function
@@ -32,10 +32,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     // Note: We still need the userId for the RPC function
@@ -69,10 +69,10 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     // Note: We still need the userId for the database operation

@@ -6,10 +6,10 @@ import { NextResponse } from 'next/server';
 // GET all products
 export async function GET() {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     const { data, error: dbError } = await supabase
@@ -36,10 +36,10 @@ export async function GET() {
 // POST a new product
 export async function POST(request: Request) {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
     const body = await request.json();
     console.log('POST request body:', body);
@@ -81,10 +81,10 @@ export async function POST(request: Request) {
 // PUT (update) a product
 export async function PUT(request: Request) {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
     const body = await request.json();
     console.log('PUT request body:', body);
@@ -131,10 +131,10 @@ export async function PUT(request: Request) {
 // DELETE a product
 export async function DELETE(request: Request) {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     const { id } = await request.json();

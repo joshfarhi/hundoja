@@ -6,10 +6,10 @@ import { encrypt } from '@/lib/email-settings';
 // GET - Fetch all email settings
 export async function GET() {
   try {
-    const { isAdmin, error, user } = await checkAdminAccess();
+    const { isAdmin, error: authError, user } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     // Fetch all email settings
@@ -41,10 +41,10 @@ export async function GET() {
 // PUT - Update email settings
 export async function PUT(req: NextRequest) {
   try {
-    const { isAdmin, error, user } = await checkAdminAccess();
+    const { isAdmin, error: authError, user } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     const formData = await req.json();
@@ -75,7 +75,7 @@ export async function PUT(req: NextRequest) {
           setting_key: key,
           setting_value: finalValue,
           encrypted: currentSetting?.encrypted || false,
-          updated_by: user.id,
+          updated_by: user?.id,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'setting_key'

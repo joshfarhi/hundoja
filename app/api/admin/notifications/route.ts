@@ -5,10 +5,10 @@ import { supabase } from '@/lib/supabase';
 // GET - Fetch all notifications
 export async function GET() {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     // Get notifications with relative time using the function we created
@@ -30,10 +30,10 @@ export async function GET() {
 // POST - Create a new notification
 export async function POST(request: NextRequest) {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -71,10 +71,10 @@ export async function POST(request: NextRequest) {
 // PUT - Mark notification as read
 export async function PUT(request: NextRequest) {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -106,10 +106,10 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete a notification or clear all
 export async function DELETE(request: NextRequest) {
   try {
-    const { isAdmin, error } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
-      return NextResponse.json({ error: error || 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
