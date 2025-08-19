@@ -7,11 +7,9 @@ import {
   Phone, 
   Download, 
   Search, 
-  Filter,
   Calendar,
   Globe,
   Trash2,
-  Eye,
   Users,
   TrendingUp,
   MapPin
@@ -20,7 +18,7 @@ import { countries, getCountryByCode } from '@/data/countries';
 
 interface NewsletterSubscriber {
   id: string;
-  email: string;
+  email?: string;
   phone?: string;
   country_code?: string;
   status: 'active' | 'unsubscribed' | 'bounced';
@@ -139,7 +137,7 @@ export default function NewsletterPage() {
 
   const exportToCSV = () => {
     const csvData = filteredSubscribers.map(sub => ({
-      Email: sub.email,
+      Email: sub.email || '',
       Phone: sub.phone || '',
       Country: sub.country_code ? getCountryByCode(sub.country_code)?.name || sub.country_code : '',
       Status: sub.status,
@@ -167,7 +165,7 @@ export default function NewsletterPage() {
   };
 
   const filteredSubscribers = subscribers.filter(subscriber => {
-    const matchesSearch = subscriber.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = (subscriber.email && subscriber.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (subscriber.phone && subscriber.phone.includes(searchTerm));
     const matchesStatus = statusFilter === 'all' || subscriber.status === statusFilter;
     const matchesCountry = countryFilter === 'all' || subscriber.country_code === countryFilter;
@@ -349,13 +347,17 @@ export default function NewsletterPage() {
                     <div className="flex items-center">
                       <Mail className="text-gray-400 mr-3" size={16} />
                       <div>
-                        <p className="text-sm font-medium text-white">{subscriber.email}</p>
+                        <p className="text-sm font-medium text-white">
+                          {subscriber.email || (subscriber.phone ? 'Phone Only' : 'No Email')}
+                        </p>
                         <div className="flex items-center space-x-2 mt-1">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            subscriber.preferences?.email_notifications ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
-                          }`}>
-                            Email
-                          </span>
+                          {subscriber.email && (
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              subscriber.preferences?.email_notifications ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
+                            }`}>
+                              Email
+                            </span>
+                          )}
                           {subscriber.phone && (
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               subscriber.preferences?.sms_notifications ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
@@ -412,13 +414,24 @@ export default function NewsletterPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => window.location.href = `mailto:${subscriber.email}`}
-                        className="text-blue-400 hover:text-blue-300 transition-colors"
-                        title="Send Email"
-                      >
-                        <Mail size={16} />
-                      </button>
+                      {subscriber.email && (
+                        <button
+                          onClick={() => window.location.href = `mailto:${subscriber.email}`}
+                          className="text-blue-400 hover:text-blue-300 transition-colors"
+                          title="Send Email"
+                        >
+                          <Mail size={16} />
+                        </button>
+                      )}
+                      {subscriber.phone && (
+                        <button
+                          onClick={() => window.location.href = `tel:${subscriber.phone}`}
+                          className="text-green-400 hover:text-green-300 transition-colors"
+                          title="Call Phone"
+                        >
+                          <Phone size={16} />
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(subscriber.id)}
                         className="text-red-400 hover:text-red-300 transition-colors"

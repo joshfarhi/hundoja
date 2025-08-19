@@ -5,14 +5,25 @@ export async function POST(req: NextRequest) {
   try {
     const { email, phone, country } = await req.json();
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    // At least one of email or phone must be provided
+    if (!email && !phone) {
+      return NextResponse.json({ error: 'Either email or phone number is required' }, { status: 400 });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    // Validate email format if provided
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+      }
+    }
+
+    // Validate phone format if provided
+    if (phone) {
+      const phoneRegex = /^\+?[\d\s\-\(\)]{7,20}$/;
+      if (!phoneRegex.test(phone)) {
+        return NextResponse.json({ error: 'Invalid phone number format' }, { status: 400 });
+      }
     }
 
     // Get client information
@@ -23,7 +34,7 @@ export async function POST(req: NextRequest) {
     // Store newsletter subscription in database
     try {
       const subscriptionData = {
-        email,
+        ...(email && { email }),
         ...(phone && { phone }),
         ...(country && { country_code: country }),
         ip_address: clientIP,
@@ -33,16 +44,32 @@ export async function POST(req: NextRequest) {
         source: 'web',
         confirmed_at: new Date().toISOString(),
         preferences: {
-          email_notifications: true,
+          email_notifications: email ? true : false,
           sms_notifications: phone ? true : false
         }
       };
 
-      const { data: existingSubscriber, error: checkError } = await supabase
-        .from('newsletter_subscribers')
-        .select('id, status')
-        .eq('email', email)
-        .single();
+      // Check for existing subscriber by email OR phone
+      let existingSubscriber = null;
+      let checkError = null;
+
+      if (email) {
+        const { data, error } = await supabase
+          .from('newsletter_subscribers')
+          .select('id, status, email, phone')
+          .eq('email', email)
+          .single();
+        existingSubscriber = data;
+        checkError = error;
+      } else if (phone) {
+        const { data, error } = await supabase
+          .from('newsletter_subscribers')
+          .select('id, status, email, phone')
+          .eq('phone', phone)
+          .single();
+        existingSubscriber = data;
+        checkError = error;
+      }
 
       if (checkError && checkError.code !== 'PGRST116') {
         throw checkError;
@@ -53,6 +80,7 @@ export async function POST(req: NextRequest) {
         const { error: updateError } = await supabase
           .from('newsletter_subscribers')
           .update({
+            ...(email && { email }),
             ...(phone && { phone }),
             ...(country && { country_code: country }),
             status: 'active',
@@ -112,11 +140,11 @@ export async function POST(req: NextRequest) {
         .insert({
           type: 'new_customer',
           title: 'New Newsletter Subscription',
-          message: `A new subscriber has joined the newsletter: ${email}`,
+          message: `A new subscriber has joined the newsletter: ${email || phone}`,
           icon_name: 'UserPlus',
           icon_color: 'text-green-400',
           metadata: {
-            email: email,
+            email: email || null,
             phone: phone || null,
             country_code: country || null,
             subscription_date: new Date().toISOString()

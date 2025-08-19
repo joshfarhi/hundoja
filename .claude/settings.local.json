@@ -21,7 +21,8 @@
       "Bash(lsof:*)",
       "Bash(npm audit:*)",
       "Bash(pkill:*)",
-      "WebFetch(domain:hundoja.vercel.app)"
+      "WebFetch(domain:hundoja.vercel.app)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": []
   }

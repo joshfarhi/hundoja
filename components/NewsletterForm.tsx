@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Mail, Send, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react';
+import { Mail, Phone, Send, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react';
 import { countries, Country } from '@/data/countries';
 
 interface NewsletterFormProps {
@@ -18,6 +18,7 @@ export default function NewsletterForm({ variant = 'footer', className }: Newsle
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [contactMethod, setContactMethod] = useState<'email' | 'phone' | 'both'>('email');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -62,18 +63,21 @@ export default function NewsletterForm({ variant = 'footer', className }: Newsle
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email) {
+    // At least one of email or phone must be provided
+    if (!email && !phone) {
       setStatus('error');
-      setMessage('Please enter your email address');
+      setMessage('Please enter either your email address or phone number');
       return;
     }
 
-    if (!email.includes('@') || !email.includes('.')) {
+    // Validate email if provided
+    if (email && (!email.includes('@') || !email.includes('.'))) {
       setStatus('error');
       setMessage('Please enter a valid email address');
       return;
     }
 
+    // Validate phone if provided
     if (phone && !validatePhone(phone)) {
       setStatus('error');
       setMessage('Please enter a valid phone number');
@@ -85,7 +89,7 @@ export default function NewsletterForm({ variant = 'footer', className }: Newsle
 
     try {
       const subscriptionData = {
-        email,
+        ...(email && { email }),
         ...(phone && { 
           phone: `${selectedCountry.dialCode}${phone.replace(/\D/g, '')}`,
           country: selectedCountry.code 
@@ -132,129 +136,211 @@ export default function NewsletterForm({ variant = 'footer', className }: Newsle
           </div>
         )}
 
-        <div className="relative">
-          <Mail 
-            className={cn(
-              "absolute left-3 top-1/2 transform -translate-y-1/2",
-              isHero ? "text-gray-300" : "text-gray-400"
-            )} 
-            size={18} 
-          />
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
-            disabled={status === 'loading'}
-            className={cn(
-              "w-full pl-10 pr-4 py-3 rounded-lg border transition-all duration-200",
-              "focus:outline-none focus:ring-2",
-              isHero ? [
-                "bg-black/30 border-white/20 text-white placeholder-gray-300",
-                "focus:ring-white/30 focus:border-white/40",
-                "backdrop-blur-sm"
-              ] : [
-                "bg-neutral-800 border-neutral-700 text-white placeholder-gray-400",
-                "focus:ring-cyan-500/50 focus:border-cyan-500/50"
-              ],
-              status === 'loading' && "opacity-50 cursor-not-allowed"
-            )}
-          />
-        </div>
+        {/* Contact Method Selector */}
+        <div className="space-y-4">
+          {/* OR Divider - positioned above selector buttons */}
+          {contactMethod !== 'both' && (
+            <div className="relative mb-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/20"></div>
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-black px-3 py-1 text-xs text-white/60 font-medium">
+                  Choose one contact method
+                </span>
+              </div>
+            </div>
+          )}
 
-        {/* Phone Number Field with Country Code */}
-        <div className="relative">
-          {/* Country Code Dropdown */}
-          <div ref={dropdownRef} className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20">
+          <div className="grid grid-cols-2 gap-2 p-1 bg-black/20 rounded-lg border border-white/10">
             <button
               type="button"
-              onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-              disabled={status === 'loading'}
+              onClick={() => {
+                if (contactMethod === 'email') {
+                  setContactMethod('both');
+                } else {
+                  setContactMethod('email');
+                  setPhone('');
+                }
+              }}
               className={cn(
-                "flex items-center space-x-1 px-2 py-1 rounded text-sm",
-                "hover:bg-white/10 transition-colors duration-200",
-                "focus:outline-none",
-                isHero ? "text-gray-300 hover:text-white" : "text-gray-400 hover:text-white",
-                status === 'loading' && "opacity-50 cursor-not-allowed"
+                "flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200",
+                contactMethod === 'email' || contactMethod === 'both'
+                  ? "bg-white text-black shadow-md"
+                  : "text-white/70 hover:text-white hover:bg-white/10"
               )}
             >
-              <span className="text-base">{selectedCountry.flag}</span>
-              <span className="text-xs font-mono">{selectedCountry.dialCode}</span>
-              <ChevronDown size={12} className={cn(
-                "transition-transform duration-200",
-                showCountryDropdown && "rotate-180"
-              )} />
+              <Mail size={16} />
+              Email
             </button>
-            
-            {showCountryDropdown && (
+            <button
+              type="button"
+              onClick={() => {
+                if (contactMethod === 'phone') {
+                  setContactMethod('both');
+                } else {
+                  setContactMethod('phone');
+                  setEmail('');
+                }
+              }}
+              className={cn(
+                "flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200",
+                contactMethod === 'phone' || contactMethod === 'both'
+                  ? "bg-white text-black shadow-md"
+                  : "text-white/70 hover:text-white hover:bg-white/10"
+              )}
+            >
+              <Phone size={16} />
+              Phone
+            </button>
+          </div>
+
+          {/* Email Input */}
+          <AnimatePresence>
+            {(contactMethod === 'email' || contactMethod === 'both') && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className={cn(
-                  "absolute top-full mt-1 w-64 max-h-60 overflow-y-auto",
-                  "rounded-lg border backdrop-blur-sm z-30",
-                  isHero ? [
-                    "bg-black/80 border-white/20"
-                  ] : [
-                    "bg-neutral-800 border-neutral-700"
-                  ]
-                )}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="relative"
               >
-                {countries.map((country) => (
-                  <button
-                    key={country.code}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCountry(country);
-                      setShowCountryDropdown(false);
-                    }}
-                    className={cn(
-                      "w-full flex items-center space-x-3 px-3 py-2 text-left text-sm",
-                      "hover:bg-white/10 transition-colors duration-200",
-                      "focus:outline-none focus:bg-white/10",
-                      selectedCountry.code === country.code && "bg-white/10",
-                      isHero ? "text-gray-300 hover:text-white" : "text-gray-400 hover:text-white"
-                    )}
-                  >
-                    <span className="text-base">{country.flag}</span>
-                    <span className="font-mono text-xs">{country.dialCode}</span>
-                    <span className="truncate">{country.name}</span>
-                  </button>
-                ))}
+                <Mail 
+                  className={cn(
+                    "absolute left-3 top-1/2 transform -translate-y-1/2",
+                    isHero ? "text-gray-300" : "text-gray-400"
+                  )} 
+                  size={18} 
+                />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  disabled={status === 'loading'}
+                  className={cn(
+                    "w-full pl-10 pr-4 py-3 rounded-lg border transition-all duration-200",
+                    "focus:outline-none focus:ring-2",
+                    isHero ? [
+                      "bg-black/30 border-white/20 text-white placeholder-gray-300",
+                      "focus:ring-white/30 focus:border-white/40",
+                      "backdrop-blur-sm"
+                    ] : [
+                      "bg-neutral-800 border-neutral-700 text-white placeholder-gray-400",
+                      "focus:ring-cyan-500/50 focus:border-cyan-500/50"
+                    ],
+                    status === 'loading' && "opacity-50 cursor-not-allowed"
+                  )}
+                />
               </motion.div>
             )}
-          </div>
-          
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => {
-              const rawValue = e.target.value.replace(/[^\d]/g, '');
-              const formattedValue = formatPhoneNumber(rawValue, selectedCountry.code);
-              setPhone(formattedValue);
-            }}
-            placeholder="Phone (optional)"
-            disabled={status === 'loading'}
-            className={cn(
-              "w-full pl-28 pr-4 py-3 rounded-lg border transition-all duration-200",
-              "focus:outline-none focus:ring-2",
-              isHero ? [
-                "bg-black/30 border-white/20 text-white placeholder-gray-300",
-                "focus:ring-white/30 focus:border-white/40",
-                "backdrop-blur-sm"
-              ] : [
-                "bg-neutral-800 border-neutral-700 text-white placeholder-gray-400",
-                "focus:ring-cyan-500/50 focus:border-cyan-500/50"
-              ],
-              status === 'loading' && "opacity-50 cursor-not-allowed"
+          </AnimatePresence>
+
+          {/* Phone Input */}
+          <AnimatePresence>
+            {(contactMethod === 'phone' || contactMethod === 'both') && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="relative"
+              >
+                {/* Country Code Dropdown */}
+                <div ref={dropdownRef} className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20">
+                  <button
+                    type="button"
+                    onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                    disabled={status === 'loading'}
+                    className={cn(
+                      "flex items-center space-x-1 px-2 py-1 rounded text-sm",
+                      "hover:bg-white/10 transition-colors duration-200",
+                      "focus:outline-none",
+                      isHero ? "text-gray-300 hover:text-white" : "text-gray-400 hover:text-white",
+                      status === 'loading' && "opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <span className="text-base">{selectedCountry.flag}</span>
+                    <span className="text-xs font-mono">{selectedCountry.dialCode}</span>
+                    <ChevronDown size={12} className={cn(
+                      "transition-transform duration-200",
+                      showCountryDropdown && "rotate-180"
+                    )} />
+                  </button>
+                  
+                  {showCountryDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className={cn(
+                        "absolute top-full mt-1 w-64 max-h-60 overflow-y-auto",
+                        "rounded-lg border backdrop-blur-sm z-30",
+                        isHero ? [
+                          "bg-black/80 border-white/20"
+                        ] : [
+                          "bg-neutral-800 border-neutral-700"
+                        ]
+                      )}
+                    >
+                      {countries.map((country) => (
+                        <button
+                          key={country.code}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCountry(country);
+                            setShowCountryDropdown(false);
+                          }}
+                          className={cn(
+                            "w-full flex items-center space-x-3 px-3 py-2 text-left text-sm",
+                            "hover:bg-white/10 transition-colors duration-200",
+                            "focus:outline-none focus:bg-white/10",
+                            selectedCountry.code === country.code && "bg-white/10",
+                            isHero ? "text-gray-300 hover:text-white" : "text-gray-400 hover:text-white"
+                          )}
+                        >
+                          <span className="text-base">{country.flag}</span>
+                          <span className="font-mono text-xs">{country.dialCode}</span>
+                          <span className="truncate">{country.name}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </div>
+                
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/[^\d]/g, '');
+                    const formattedValue = formatPhoneNumber(rawValue, selectedCountry.code);
+                    setPhone(formattedValue);
+                  }}
+                  placeholder="Phone number"
+                  disabled={status === 'loading'}
+                  className={cn(
+                    "w-full pl-28 pr-4 py-3 rounded-lg border transition-all duration-200",
+                    "focus:outline-none focus:ring-2",
+                    isHero ? [
+                      "bg-black/30 border-white/20 text-white placeholder-gray-300",
+                      "focus:ring-white/30 focus:border-white/40",
+                      "backdrop-blur-sm"
+                    ] : [
+                      "bg-neutral-800 border-neutral-700 text-white placeholder-gray-400",
+                      "focus:ring-cyan-500/50 focus:border-cyan-500/50"
+                    ],
+                    status === 'loading' && "opacity-50 cursor-not-allowed"
+                  )}
+                />
+              </motion.div>
             )}
-          />
+          </AnimatePresence>
+
         </div>
 
         <motion.button
           type="submit"
-          disabled={status === 'loading' || !email}
+          disabled={status === 'loading' || (!email && !phone)}
           className={cn(
             "w-full py-2 sm:py-3 px-4 sm:px-6 font-semibold transition-all duration-300",
             "flex items-center justify-center space-x-2",
