@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Instagram, Twitter, Facebook, Mail } from 'lucide-react';
+import { Instagram, Mail } from 'lucide-react';
 import NewsletterForm from './NewsletterForm';
 import Image from 'next/image';
 
@@ -27,12 +27,6 @@ export default function Footer() {
             <div className="flex space-x-4">
               <a href="#" className="text-white hover:text-gray-300 transition-colors">
                 <Instagram size={24} />
-              </a>
-              <a href="#" className="text-white hover:text-gray-300 transition-colors">
-                <Twitter size={24} />
-              </a>
-              <a href="#" className="text-white hover:text-gray-300 transition-colors">
-                <Facebook size={24} />
               </a>
               <a href="#" className="text-white hover:text-gray-300 transition-colors">
                 <Mail size={24} />
