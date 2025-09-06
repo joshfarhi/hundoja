@@ -5,6 +5,7 @@ import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js'
 import { useCart } from '@/contexts/CartContext';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function CheckoutForm() {
   const stripe = useStripe();
@@ -12,14 +13,60 @@ export default function CheckoutForm() {
   const { state, dispatch } = useCart();
   const router = useRouter();
   const { user } = useUser();
+  const { showToast } = useToast();
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Address form state
+  const [billingAddress, setBillingAddress] = useState({
+    name: user?.fullName || '',
+    email: user?.primaryEmailAddress?.emailAddress || '',
+    line1: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    country: 'US',
+  });
+
+  const [shippingAddress, setShippingAddress] = useState({
+    name: user?.fullName || '',
+    email: user?.primaryEmailAddress?.emailAddress || '',
+    line1: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    country: 'US',
+  });
+
+  const [useSameAddress, setUseSameAddress] = useState(true);
+
+  // Validation function
+  const validateAddresses = () => {
+    if (!billingAddress.name || !billingAddress.email || !billingAddress.line1 ||
+        !billingAddress.city || !billingAddress.state || !billingAddress.postal_code) {
+      return 'Please fill in all required billing address fields';
+    }
+
+    if (!useSameAddress && (!shippingAddress.name || !shippingAddress.email || !shippingAddress.line1 ||
+        !shippingAddress.city || !shippingAddress.state || !shippingAddress.postal_code)) {
+      return 'Please fill in all required shipping address fields';
+    }
+
+    return null;
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     if (!stripe || !elements) {
+      return;
+    }
+
+    // Validate addresses
+    const validationError = validateAddresses();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -59,33 +106,12 @@ export default function CheckoutForm() {
       } else {
         // Create order in database after successful payment
         try {
-          const customerEmail = user?.primaryEmailAddress?.emailAddress || '';
-          const customerName = user?.fullName || 'Guest Customer';
-          
           const orderData = {
             items: state.items,
             total: state.total,
             subtotal: state.total, // You can calculate tax/shipping separately if needed
-            billing_address: {
-              name: customerName,
-              email: customerEmail,
-              // TODO: These should come from a proper address form in production
-              line1: '',
-              city: '',
-              state: '', 
-              postal_code: '',
-              country: 'US',
-            },
-            shipping_address: {
-              name: customerName,
-              email: customerEmail,
-              // TODO: These should come from a proper address form in production
-              line1: '',
-              city: '',
-              state: '',
-              postal_code: '', 
-              country: 'US',
-            },
+            billing_address: billingAddress,
+            shipping_address: useSameAddress ? billingAddress : shippingAddress,
             stripe_payment_intent_id: paymentIntentId,
           };
 
@@ -101,16 +127,22 @@ export default function CheckoutForm() {
             // Order created successfully
             await orderResponse.json();
           }
-        } catch {
-          // Handle order creation error silently - payment already succeeded
+        } catch (orderError) {
+          console.error('Order creation failed after successful payment:', orderError);
+          showToast('Payment successful, but order creation failed. Please contact support.', 'warning');
         }
 
         // Clear cart on successful payment
         dispatch({ type: 'CLEAR_CART' });
         router.push('/checkout/success');
       }
-    } catch {
-      setError('An error occurred during payment');
+    } catch (paymentError) {
+      console.error('Payment error:', paymentError);
+      const errorMessage = paymentError instanceof Error
+        ? paymentError.message
+        : 'An unexpected error occurred during payment';
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +150,162 @@ export default function CheckoutForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement 
+      {/* Billing Address */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-white">Billing Address</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Full Name *</label>
+            <input
+              type="text"
+              value={billingAddress.name}
+              onChange={(e) => setBillingAddress(prev => ({ ...prev, name: e.target.value }))}
+              className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+            <input
+              type="email"
+              value={billingAddress.email}
+              onChange={(e) => setBillingAddress(prev => ({ ...prev, email: e.target.value }))}
+              className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              required
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Street Address *</label>
+          <input
+            type="text"
+            value={billingAddress.line1}
+            onChange={(e) => setBillingAddress(prev => ({ ...prev, line1: e.target.value }))}
+            className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            required
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">City *</label>
+            <input
+              type="text"
+              value={billingAddress.city}
+              onChange={(e) => setBillingAddress(prev => ({ ...prev, city: e.target.value }))}
+              className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">State *</label>
+            <input
+              type="text"
+              value={billingAddress.state}
+              onChange={(e) => setBillingAddress(prev => ({ ...prev, state: e.target.value }))}
+              className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">ZIP Code *</label>
+            <input
+              type="text"
+              value={billingAddress.postal_code}
+              onChange={(e) => setBillingAddress(prev => ({ ...prev, postal_code: e.target.value }))}
+              className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              required
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Shipping Address */}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="sameAddress"
+            checked={useSameAddress}
+            onChange={(e) => setUseSameAddress(e.target.checked)}
+            className="w-4 h-4 text-cyan-600 bg-neutral-800 border-neutral-600 rounded focus:ring-cyan-500"
+          />
+          <label htmlFor="sameAddress" className="text-sm text-gray-300">
+            Shipping address same as billing
+          </label>
+        </div>
+
+        {!useSameAddress && (
+          <>
+            <h3 className="text-lg font-semibold text-white">Shipping Address</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  value={shippingAddress.name}
+                  onChange={(e) => setShippingAddress(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={shippingAddress.email}
+                  onChange={(e) => setShippingAddress(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Street Address *</label>
+              <input
+                type="text"
+                value={shippingAddress.line1}
+                onChange={(e) => setShippingAddress(prev => ({ ...prev, line1: e.target.value }))}
+                className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">City *</label>
+                <input
+                  type="text"
+                  value={shippingAddress.city}
+                  onChange={(e) => setShippingAddress(prev => ({ ...prev, city: e.target.value }))}
+                  className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">State *</label>
+                <input
+                  type="text"
+                  value={shippingAddress.state}
+                  onChange={(e) => setShippingAddress(prev => ({ ...prev, state: e.target.value }))}
+                  className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">ZIP Code *</label>
+                <input
+                  type="text"
+                  value={shippingAddress.postal_code}
+                  onChange={(e) => setShippingAddress(prev => ({ ...prev, postal_code: e.target.value }))}
+                  className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  required
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      <PaymentElement
         options={{
           layout: 'tabs',
         }}

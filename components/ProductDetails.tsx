@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
+import { useToast } from '@/contexts/ToastContext';
 import { cn } from '@/lib/utils';
 import { 
   ChevronLeft, 
@@ -42,13 +43,14 @@ interface ProductDetailsProps {
 
 export default function ProductDetails({ product }: ProductDetailsProps) {
   const { dispatch } = useCart();
+  const { showToast } = useToast();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   const addToCart = () => {
     if (product.stock_quantity === 0) {
-      alert('This product is out of stock');
+      showToast('This product is out of stock', 'error');
       return;
     }
 
@@ -66,7 +68,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
     }
 
     // Show success message or animation
-    alert(`Added ${quantity} ${product.name}(s) to cart!`);
+    showToast(`Added ${quantity} ${product.name}(s) to cart!`, 'success');
   };
 
   const nextImage = () => {
@@ -95,7 +97,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
     } else {
       // Fallback to copying URL to clipboard
       navigator.clipboard.writeText(window.location.href);
-      alert('Product URL copied to clipboard!');
+      showToast('Product URL copied to clipboard!', 'success');
     }
   };
 

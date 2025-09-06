@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs';
 import { CartProvider } from '@/contexts/CartContext';
+import { ToastProvider } from '@/contexts/ToastContext';
+import { ToastContainer } from '@/components/ui/Toast';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,9 +32,12 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
         >
-          <CartProvider>
-            {children}
-          </CartProvider>
+          <ToastProvider>
+            <CartProvider>
+              {children}
+              <ToastContainer />
+            </CartProvider>
+          </ToastProvider>
         </body>
       </html>
     </ClerkProvider>

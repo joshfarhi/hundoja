@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
+import { useToast } from '@/contexts/ToastContext';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
@@ -443,6 +444,7 @@ const CategoryModal = ({ category, onClose, onSave }: { category: Category | nul
 
 // Main Component
 export default function ProductsPage() {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -507,7 +509,6 @@ export default function ProductsPage() {
         updateData.stock_quantity = parseInt(updateData.stock_quantity) || 0;
       }
       
-      console.log('Processed update data:', updateData);
       
       const response = await fetch('/api/admin/products', {
         method: id ? 'PUT' : 'POST',
@@ -517,27 +518,27 @@ export default function ProductsPage() {
         body: JSON.stringify(productData),
       });
 
-      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Error saving product:', errorData);
-        alert(`Error saving product: ${errorData.error || 'Unknown error'}`);
+        showToast(`Error saving product: ${errorData.error || 'Unknown error'}`, 'error');
         return;
       }
 
       const result = await response.json();
-      console.log('Product saved successfully:', result);
 
       setIsProductModalOpen(false);
       setSelectedProduct(null);
-      
+
       // Refresh the products list
       fetchData();
-      
+
+      showToast('Product saved successfully!', 'success');
+
     } catch (error) {
       console.error('Error saving product:', error);
-      alert('Error saving product. Please try again.');
+      showToast('Error saving product. Please try again.', 'error');
     }
   };
   
