@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
@@ -47,6 +47,29 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string>(product.colors?.[0] || '');
+  const isLogoTee = product.name.toLowerCase().includes('logo tee');
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomOrigin, setZoomOrigin] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+  const imageContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // When selecting a color on Logo Tee, show the matching color image first
+  useEffect(() => {
+    if (!product?.images || product.images.length === 0) return;
+    if (!isLogoTee || !selectedColor) return;
+
+    const colorToFilename: Record<string, string> = {
+      Red: '20250910-808A1060_(3).jpg',
+      White: '20250910-808A1061_(3).jpg',
+    };
+
+    const target = colorToFilename[selectedColor];
+    if (!target) return;
+    const idx = product.images.findIndex((src) => src.endsWith(target));
+    if (idx >= 0 && idx !== currentImageIndex) {
+      setCurrentImageIndex(idx);
+    }
+  }, [selectedColor, product, currentImageIndex]);
 
   const addToCart = () => {
     if (product.stock_quantity === 0) {
@@ -60,7 +83,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
         type: 'ADD_ITEM',
         payload: {
           id: product.id,
-          name: product.name,
+          name: selectedColor ? `${product.name} - ${selectedColor}` : product.name,
           price: product.price,
           image: product.images[0] || '/placeholder-product.jpg',
         },
@@ -123,14 +146,58 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <div className="relative aspect-square rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800">
+          <div
+            ref={imageContainerRef}
+            className="relative aspect-square rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 touch-pan-y"
+            onMouseEnter={() => setIsZoomed(true)}
+            onMouseLeave={() => setIsZoomed(false)}
+            onMouseMove={(e) => {
+              if (!isZoomed || !imageContainerRef.current) return;
+              const rect = imageContainerRef.current.getBoundingClientRect();
+              const x = ((e.clientX - rect.left) / rect.width) * 100;
+              const y = ((e.clientY - rect.top) / rect.height) * 100;
+              setZoomOrigin({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+            }}
+            onClick={() => {
+              // Toggle zoom on click (useful for mobile)
+              setIsZoomed((z) => !z);
+            }}
+            onTouchStart={(e) => {
+              if (!imageContainerRef.current) return;
+              const touch = e.touches[0];
+              if (!touch) return;
+              const rect = imageContainerRef.current.getBoundingClientRect();
+              const x = ((touch.clientX - rect.left) / rect.width) * 100;
+              const y = ((touch.clientY - rect.top) / rect.height) * 100;
+              setZoomOrigin({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+              setIsZoomed(true);
+            }}
+            onTouchMove={(e) => {
+              if (!imageContainerRef.current || !isZoomed) return;
+              const touch = e.touches[0];
+              if (!touch) return;
+              const rect = imageContainerRef.current.getBoundingClientRect();
+              const x = ((touch.clientX - rect.left) / rect.width) * 100;
+              const y = ((touch.clientY - rect.top) / rect.height) * 100;
+              setZoomOrigin({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+            }}
+          >
             {product.images && product.images.length > 0 ? (
               <Image
                 src={product.images[currentImageIndex]}
                 alt={product.name}
                 fill
-                className="object-cover"
+                className="object-cover select-none"
                 priority
+                style={isZoomed ? {
+                  transform: 'scale(2)',
+                  transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
+                  transition: 'transform 0.05s ease-out'
+                } : {
+                  transform: 'scale(1)',
+                  transformOrigin: '50% 50%',
+                  transition: 'transform 0.15s ease-out'
+                }}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -138,8 +205,8 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
               </div>
             )}
             
-            {/* Image Navigation */}
-            {product.images && product.images.length > 1 && (
+            {/* Image Navigation (hidden for Logo Tee) */}
+            {product.images && product.images.length > 1 && !isLogoTee && !isZoomed && (
               <>
                 <button
                   onClick={prevImage}
@@ -156,16 +223,21 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
               </>
             )}
 
-            {/* Image Counter */}
-            {product.images && product.images.length > 1 && (
+            {/* Image Counter (hidden for Logo Tee) */}
+            {product.images && product.images.length > 1 && !isLogoTee && !isZoomed && (
               <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
                 {currentImageIndex + 1} / {product.images.length}
               </div>
             )}
+
+            {/* Zoom hint / toggle */}
+            <div className="absolute top-3 right-3 text-xs px-2 py-1 rounded bg-black/60 text-white backdrop-blur-sm hidden sm:block">
+              {isZoomed ? 'Click/tap to exit' : 'Hover/click to zoom'}
+            </div>
           </div>
           
-          {/* Thumbnail Gallery */}
-          {product.images && product.images.length > 1 && (
+          {/* Thumbnail Gallery (hidden for Logo Tee) */}
+          {product.images && product.images.length > 1 && !isLogoTee && (
             <div className="flex gap-4 mt-4 overflow-x-auto pb-2">
               {product.images.map((image, index) => (
                 <button
@@ -267,6 +339,30 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
               {product.description}
             </p>
           </div>
+
+          {/* Variants / Options */}
+          {product.colors && product.colors.length > 0 && (
+            <div className="space-y-2">
+              <label className="block text-white font-semibold">Color</label>
+              <div className="flex flex-wrap gap-2">
+                {product.colors.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setSelectedColor(color)}
+                    className={cn(
+                      'px-3 py-2 rounded-md border text-sm transition-colors',
+                      selectedColor === color
+                        ? 'bg-white text-black border-white'
+                        : 'bg-neutral-900 text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                    )}
+                    aria-pressed={selectedColor === color}
+                  >
+                    {color}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Quantity and Add to Cart */}
           <div className="space-y-4">
