@@ -29,6 +29,8 @@ interface Product {
   stock_quantity: number;
   images: string[];
   is_active: boolean;
+  sizes?: string[];
+  colors?: string[];
   categories: { 
     id: string;
     slug: string; 
@@ -48,6 +50,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string>(product.colors?.[0] || '');
+  const [selectedSize, setSelectedSize] = useState<string>(product.sizes?.[0] || '');
   const isLogoTee = product.name.toLowerCase().includes('logo tee');
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomOrigin, setZoomOrigin] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
@@ -77,6 +80,11 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       return;
     }
 
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+      showToast('Please select a size', 'error');
+      return;
+    }
+
     // Add item to cart (quantity is handled by the reducer)
     for (let i = 0; i < quantity; i++) {
       dispatch({
@@ -86,6 +94,8 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
           name: selectedColor ? `${product.name} - ${selectedColor}` : product.name,
           price: product.price,
           image: product.images[0] || '/placeholder-product.jpg',
+          size: selectedSize || undefined,
+          color: selectedColor || undefined,
         },
       });
     }
@@ -341,6 +351,29 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
           </div>
 
           {/* Variants / Options */}
+          {product.sizes && product.sizes.length > 0 && (
+            <div className="space-y-2">
+              <label className="block text-white font-semibold">Size</label>
+              <div className="flex flex-wrap gap-2">
+                {product.sizes.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(size)}
+                    className={cn(
+                      'px-3 py-2 rounded-md border text-sm transition-colors',
+                      selectedSize === size
+                        ? 'bg-white text-black border-white'
+                        : 'bg-neutral-900 text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                    )}
+                    aria-pressed={selectedSize === size}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {product.colors && product.colors.length > 0 && (
             <div className="space-y-2">
               <label className="block text-white font-semibold">Color</label>
