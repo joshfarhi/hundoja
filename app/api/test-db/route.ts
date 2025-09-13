@@ -20,7 +20,7 @@ export async function GET() {
       .single();
 
     // Get actual newsletter data
-    const { data: newsletterData, error: newsletterDataError } = await supabase
+    const { data: newsletterData } = await supabase
       .from('newsletter_subscribers')
       .select('*')
       .limit(5);

@@ -6,7 +6,7 @@ import { encrypt } from '@/lib/email-settings';
 // GET - Fetch all email settings
 export async function GET() {
   try {
-    const { isAdmin, error: authError, user } = await checkAdminAccess();
+    const { isAdmin, error: authError } = await checkAdminAccess();
     
     if (!isAdmin) {
       return NextResponse.json({ error: authError || 'Admin access required' }, { status: 403 });

@@ -526,7 +526,7 @@ export default function ProductsPage() {
         return;
       }
 
-      const result = await response.json();
+      await response.json();
 
       setIsProductModalOpen(false);
       setSelectedProduct(null);

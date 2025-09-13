@@ -23,31 +23,31 @@ export async function GET(request: NextRequest) {
       if (analyticsError) {
         console.error('Analytics error:', analyticsError);
         // Return default analytics if view doesn't exist
-        const { count: activeCount, error: activeError } = await supabase
+        const { count: activeCount } = await supabase
           .from('newsletter_subscribers')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'active');
 
-        const { count: totalCount, error: totalError } = await supabase
+        const { count: totalCount } = await supabase
           .from('newsletter_subscribers')
           .select('*', { count: 'exact', head: true });
 
-        const { count: phoneCount, error: phoneError } = await supabase
+        const { count: phoneCount } = await supabase
           .from('newsletter_subscribers')
           .select('*', { count: 'exact', head: true })
           .not('phone', 'is', null);
 
-        const { count: newCount30d, error: new30Error } = await supabase
+        const { count: newCount30d } = await supabase
           .from('newsletter_subscribers')
           .select('*', { count: 'exact', head: true })
           .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
-        const { count: newCount7d, error: new7Error } = await supabase
+        const { count: newCount7d } = await supabase
           .from('newsletter_subscribers')
           .select('*', { count: 'exact', head: true })
           .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
-        const { data: countryData, error: countryError } = await supabase
+        const { data: countryData } = await supabase
           .from('newsletter_subscribers')
           .select('country_code')
           .not('country_code', 'is', null);
