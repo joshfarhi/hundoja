@@ -9,7 +9,6 @@ import ProductUploadForm from '@/components/ProductUploadForm';
 import ProductBulkUpload from '@/components/ProductBulkUpload';
 import { useToast } from '@/contexts/ToastContext';
 import {
-  Upload,
   FileText,
   Plus,
   Package,

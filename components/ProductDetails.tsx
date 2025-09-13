@@ -72,7 +72,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
     if (idx >= 0 && idx !== currentImageIndex) {
       setCurrentImageIndex(idx);
     }
-  }, [selectedColor, product, currentImageIndex]);
+  }, [selectedColor, product, currentImageIndex, isLogoTee]);
 
   const addToCart = () => {
     if (product.stock_quantity === 0) {

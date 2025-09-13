@@ -6,7 +6,6 @@ import { useToast } from '@/contexts/ToastContext';
 import { cn } from '@/lib/utils';
 import {
   Upload,
-  Package,
   Image as ImageIcon,
   DollarSign,
   Hash,
@@ -158,7 +157,7 @@ export default function ProductUploadForm({ onSuccess, onCancel, className }: Pr
         throw new Error(errorData.error || 'Failed to create product');
       }
 
-      const result = await response.json();
+      await response.json();
 
       showToast('Product created successfully!', 'success');
 

@@ -22,8 +22,25 @@ interface Category {
 
 interface UploadResult {
   success: boolean;
-  product: any;
+  product: Record<string, unknown> & Partial<Product>;
   error?: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  sku: string;
+  price: number;
+  stock_quantity: number;
+  category_id: string;
+  images: string[];
+  is_active: boolean;
+  is_featured: boolean;
+  sizes: string[];
+  colors: string[];
+  category_name?: string;
+  rowNumber?: number;
 }
 
 interface ProductBulkUploadProps {
@@ -36,9 +53,9 @@ export default function ProductBulkUpload({ onSuccess, onCancel, className }: Pr
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [parsedData, setParsedData] = useState<any[]>([]);
+  const [parsedData, setParsedData] = useState<(Record<string, unknown> & Partial<Product>)[]>([]);
   const [uploadResults, setUploadResults] = useState<UploadResult[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -48,7 +65,7 @@ export default function ProductBulkUpload({ onSuccess, onCancel, className }: Pr
 
   const fetchCategories = async () => {
     try {
-      setLoading(true);
+      setCategoriesLoading(true);
       const response = await fetch('/api/admin/categories');
       if (response.ok) {
         const data = await response.json();
@@ -57,7 +74,7 @@ export default function ProductBulkUpload({ onSuccess, onCancel, className }: Pr
     } catch (error) {
       console.error('Error fetching categories:', error);
     } finally {
-      setLoading(false);
+      setCategoriesLoading(false);
     }
   };
 
@@ -113,10 +130,10 @@ export default function ProductBulkUpload({ onSuccess, onCancel, className }: Pr
 
       const products = lines.slice(1).map((line, index) => {
         const values = parseCSVLine(line);
-        const product: any = {};
+        const product: Record<string, unknown> & Partial<Product> = {};
 
         headers.forEach((header, i) => {
-          let value = values[i]?.replace(/"/g, '').trim() || '';
+          const value = values[i]?.replace(/"/g, '').trim() || '';
 
           // Type conversion
           if (header === 'price' || header === 'stock_quantity') {
@@ -436,8 +453,8 @@ export default function ProductBulkUpload({ onSuccess, onCancel, className }: Pr
                     <div key={index} className="p-4 border-b border-neutral-700 last:border-b-0">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="text-white font-semibold">{result.product.name}</p>
-                          <p className="text-neutral-400 text-sm">Row {result.product.rowNumber}</p>
+                          <p className="text-white font-semibold">{(result.product as Product).name}</p>
+                          <p className="text-neutral-400 text-sm">Row {(result.product as Product).rowNumber}</p>
                         </div>
                         <XCircle size={16} className="text-red-500 flex-shrink-0" />
                       </div>

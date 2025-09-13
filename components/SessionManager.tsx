@@ -5,7 +5,7 @@ import { useAuth } from '@clerk/nextjs';
 import { clearClerkTokens, useSessionRefresh } from '@/lib/clerk-session';
 
 export default function SessionManager() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded } = useAuth();
   
   // Use the session refresh hook
   useSessionRefresh();

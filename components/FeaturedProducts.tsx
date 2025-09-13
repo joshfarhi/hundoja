@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/lib/utils';
-import { ShoppingCart } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -59,17 +58,6 @@ export default function FeaturedProducts() {
     fetchFeaturedProducts();
   }, []);
 
-  const addToCart = (product: Product) => {
-    dispatch({
-      type: 'ADD_ITEM',
-      payload: {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.images?.[0] || '',
-      },
-    });
-  };
 
   if (loading) {
     return (
