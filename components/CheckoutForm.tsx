@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { useCart } from '@/contexts/CartContext';
 import { useRouter } from 'next/navigation';
@@ -40,6 +40,8 @@ export default function CheckoutForm() {
   });
 
   const [useSameAddress, setUseSameAddress] = useState(true);
+  const [isCalculatingShipping, setIsCalculatingShipping] = useState(false);
+  const [shippingCalculated, setShippingCalculated] = useState(false);
 
   // Validation function
   const validateAddresses = () => {
@@ -55,6 +57,76 @@ export default function CheckoutForm() {
 
     return null;
   };
+
+  // Calculate shipping cost
+  const calculateShipping = async (address: typeof billingAddress) => {
+    if (state.items.length === 0) return;
+
+    setIsCalculatingShipping(true);
+    try {
+      const response = await fetch('/api/shipping-calculate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address,
+          items: state.items.map(item => ({
+            id: item.id,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        dispatch({ type: 'UPDATE_SHIPPING', payload: data.shipping_cost });
+        setShippingCalculated(true);
+      } else {
+        console.error('Failed to calculate shipping');
+        dispatch({ type: 'UPDATE_SHIPPING', payload: 0 });
+      }
+    } catch (error) {
+      console.error('Shipping calculation error:', error);
+      dispatch({ type: 'UPDATE_SHIPPING', payload: 0 });
+    } finally {
+      setIsCalculatingShipping(false);
+    }
+  };
+
+  // Calculate shipping when billing address changes
+  useEffect(() => {
+    const hasRequiredFields = billingAddress.line1 && billingAddress.city &&
+                             billingAddress.state && billingAddress.postal_code;
+
+    if (hasRequiredFields && useSameAddress) {
+      calculateShipping(billingAddress);
+    }
+  }, [billingAddress.line1, billingAddress.city, billingAddress.state, billingAddress.postal_code, useSameAddress]);
+
+  // Calculate shipping when shipping address changes
+  useEffect(() => {
+    const hasRequiredFields = shippingAddress.line1 && shippingAddress.city &&
+                             shippingAddress.state && shippingAddress.postal_code;
+
+    if (hasRequiredFields && !useSameAddress) {
+      calculateShipping(shippingAddress);
+    }
+  }, [shippingAddress.line1, shippingAddress.city, shippingAddress.state, shippingAddress.postal_code, useSameAddress]);
+
+  // Calculate shipping when cart items change
+  useEffect(() => {
+    if (state.items.length > 0) {
+      const address = useSameAddress ? billingAddress : shippingAddress;
+      const hasRequiredFields = address.line1 && address.city &&
+                               address.state && address.postal_code;
+
+      if (hasRequiredFields) {
+        calculateShipping(address);
+      }
+    }
+  }, [state.items]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -109,7 +181,8 @@ export default function CheckoutForm() {
           const orderData = {
             items: state.items,
             total: state.total,
-            subtotal: state.total, // You can calculate tax/shipping separately if needed
+            subtotal: state.subtotal,
+            shipping: state.shipping,
             billing_address: billingAddress,
             shipping_address: useSameAddress ? billingAddress : shippingAddress,
             stripe_payment_intent_id: paymentIntentId,

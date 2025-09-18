@@ -138,10 +138,28 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              <div className="border-t border-white/10 pt-4">
-                <div className="flex justify-between text-white text-lg font-bold">
-                  <span>Total</span>
-                  <span>${state.total.toFixed(2)}</span>
+              <div className="border-t border-white/10 pt-4 space-y-2">
+                <div className="flex justify-between text-white">
+                  <span>Subtotal</span>
+                  <span>${state.subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-white">
+                  <span>Shipping</span>
+                  <span>
+                    {state.shipping === 0 && state.items.length > 0 ? (
+                      <span className="text-gray-400">Calculating...</span>
+                    ) : state.shipping === 0 && state.subtotal >= 150 ? (
+                      <span className="text-green-400">FREE</span>
+                    ) : (
+                      `$${state.shipping.toFixed(2)}`
+                    )}
+                  </span>
+                </div>
+                <div className="border-t border-white/20 pt-2">
+                  <div className="flex justify-between text-white text-lg font-bold">
+                    <span>Total</span>
+                    <span>${state.total.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
             </motion.div>
